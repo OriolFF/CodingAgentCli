@@ -104,7 +104,7 @@ def test_clear_registry():
     registry.register("agent1", agent1)
     registry.register("agent2", agent2)
     
-   registry.clear()
+    registry.clear()
     
     assert len(registry.list_agents()) == 0
 
