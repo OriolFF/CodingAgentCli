@@ -51,7 +51,6 @@ def _create_codebase_agent() -> Agent:
     """
     agent = Agent(
         "ollama:mistral",
-        result_type=CodeAnalysis,
         system_prompt="""You are an expert code analyst and software architect.
     
 Your role is to analyze codebases, identify patterns, assess code quality,
