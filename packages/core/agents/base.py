@@ -3,8 +3,10 @@
 This module demonstrates the basic usage of PydanticAI with structured outputs.
 """
 
+import os
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
+from pydantic_ai.models.ollama import OllamaModel
 
 
 class SimpleResponse(BaseModel):
@@ -19,9 +21,15 @@ class SimpleResponse(BaseModel):
     )
 
 
+# Configure Ollama model with explicit base URL
+ollama_model = OllamaModel(
+    model_name="mistral",
+    base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"),
+)
+
 # Create first PydanticAI agent with Ollama
 simple_agent = Agent(
-    "ollama:mistral",
+    ollama_model,
     output_type=SimpleResponse,
     system_prompt="You are a helpful assistant. Provide concise, accurate answers.",
 )
