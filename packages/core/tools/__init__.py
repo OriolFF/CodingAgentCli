@@ -8,6 +8,9 @@ from .base import BaseTool, ToolResult, ToolError
 from .file_operations import ReadFileTool, WriteFileTool
 from .file_edit import EditFileTool
 from .search import ListDirectoryTool, GlobSearchTool, GrepSearchTool
+from .shell import ShellExecutionTool
+from .web import FetchUrlTool
+from .memory import MemoryTool
 
 __all__ = [
     "BaseTool",
@@ -19,4 +22,7 @@ __all__ = [
     "ListDirectoryTool",
     "GlobSearchTool",
     "GrepSearchTool",
+    "ShellExecutionTool",
+    "FetchUrlTool",
+    "MemoryTool",
 ]
