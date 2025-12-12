@@ -9,7 +9,7 @@ from packages.core.utils.errors import AgentError
 def test_register_agent():
     """Test registering an agent."""
     registry = AgentRegistry()
-    agent = Agent("test:model")
+    agent = Agent("ollama:mistral")
     
     registry.register("test_agent", agent)
     
@@ -20,8 +20,8 @@ def test_register_agent():
 def test_register_duplicate_agent():
     """Test registering duplicate agent name raises error."""
     registry = AgentRegistry()
-    agent1 = Agent("test:model1")
-    agent2 = Agent("test:model2")
+    agent1 = Agent("ollama:mistral")
+    agent2 = Agent("ollama:llama2")
     
     registry.register("test_agent", agent1)
     
@@ -32,7 +32,7 @@ def test_register_duplicate_agent():
 def test_get_agent():
     """Test retrieving an agent."""
     registry = AgentRegistry()
-    agent = Agent("test:model")
+    agent = Agent("ollama:mistral")
     
     registry.register("test_agent", agent)
     retrieved = registry.get("test_agent")
@@ -51,8 +51,8 @@ def test_get_nonexistent_agent():
 def test_list_agents():
     """Test listing all agents."""
     registry = AgentRegistry()
-    agent1 = Agent("test:model1")
-    agent2 = Agent("test:model2")
+    agent1 = Agent("ollama:mistral")
+    agent2 = Agent("ollama:llama2")
     
     registry.register("agent1", agent1)
     registry.register("agent2", agent2)
@@ -66,7 +66,7 @@ def test_list_agents():
 def test_unregister_agent():
     """Test unregistering an agent."""
     registry = AgentRegistry()
-    agent = Agent("test:model")
+    agent = Agent("ollama:mistral")
     
     registry.register("test_agent", agent)
     registry.unregister("test_agent")
@@ -86,8 +86,8 @@ def test_unregister_nonexistent_agent():
 def test_clear_registry():
     """Test clearing all agents."""
     registry = AgentRegistry()
-    agent1 = Agent("test:model1")
-    agent2 = Agent("test:model2")
+    agent1 = Agent("ollama:mistral")
+    agent2 = Agent("ollama:llama2")
     
     registry.register("agent1", agent1)
     registry.register("agent2", agent2)
@@ -100,7 +100,7 @@ def test_clear_registry():
 def test_has_agent():
     """Test checking agent existence."""
     registry = AgentRegistry()
-    agent = Agent("test:model")
+    agent = Agent("ollama:mistral")
     
     assert not registry.has_agent("test_agent")
     
