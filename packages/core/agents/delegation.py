@@ -131,7 +131,9 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
         
         try:
             result = await codebase_agent.run(prompt)
-            return f"Code Analysis:\n{result.data.summary}"
+            # Handle text-only response
+            output = result.output if hasattr(result, 'output') else str(result.data)
+            return f"Code Analysis:\n{output}"
         except Exception as e:
             logger.error(f"Codebase analysis failed: {e}")
             return f"Analysis failed: {str(e)}"
@@ -210,7 +212,9 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
         
         try:
             result = await codebase_agent.run(prompt)
-            return f"Search results:\n{result.data.summary}"
+            # Handle text-only response
+            output = result.output if hasattr(result, 'output') else str(result.data)
+            return f"Search results:\n{output}"
         except Exception as e:
             logger.error(f"Code search failed: {e}")
             return f"Search failed: {str(e)}"
