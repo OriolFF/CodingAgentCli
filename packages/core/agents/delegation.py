@@ -46,9 +46,12 @@ def _create_coordinator_agent() -> Agent:
     Returns:
         Configured coordinator agent
     """
+    from ..config import get_config
+    config = get_config()
+    
     # Note: Using text-only mode since structured output needs careful setup
     agent = Agent(
-        "ollama:mistral",
+        config.get_agent_model("coordinator"),
         system_prompt="""You are an intelligent task coordinator for a multi-agent system.
 
 **YOUR JOB**: Actually USE the tools to complete user requests. Don't explain, DO.

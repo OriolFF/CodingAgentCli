@@ -49,8 +49,11 @@ def _create_codebase_agent() -> Agent:
     Returns:
         Configured agent
     """
+    from ..config import get_config
+    config = get_config()
+    
     agent = Agent(
-        "ollama:mistral",
+        config.get_agent_model("codebase"),
         system_prompt="""You are an expert code analyst and software architect.
 
 Your role is to analyze codebases, identify patterns, assess code quality,

@@ -47,8 +47,11 @@ def _create_file_editor_agent() -> Agent:
     Returns:
         Configured agent
     """
+    from ..config import get_config
+    config = get_config()
+    
     agent = Agent(
-        "ollama:mistral",
+        config.get_agent_model("file_editor"),
         system_prompt="""You are an expert code editor specializing in precise, minimal changes.
 
 Your role is to make targeted edits to code files while preserving:

@@ -35,19 +35,9 @@ class AgentConfigSpec(BaseModel):
         le=2.0,
         description="Model temperature"
     )
-    max_tokens: int = Field(
-        default=4096,
-        gt=0,
-        description="Maximum tokens for response"
-    )
     system_prompt: str = Field(
         default="",
         description="System prompt for the agent"
-    )
-    timeout: int = Field(
-        default=300,
-        gt=0,
-        description="Timeout in seconds"
     )
     retries: int = Field(
         default=2,
@@ -57,36 +47,23 @@ class AgentConfigSpec(BaseModel):
 
 
 class Config(BaseSettings):
-    """Main application configuration with environment variable support.
-    
-    Loads from:
-    1. Environment variables (highest priority)
-    2. .env file
-    3. Default values (lowest priority)
-    """
+    """Main configuration class."""
     
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        env_prefix="",
-        case_sensitive=False,
         extra="ignore",
+        case_sensitive=False,
     )
     
     # Application settings
-    app_name: str = Field(default="pydantic-agent", description="Application name")
-    debug: bool = Field(default=False, description="Enable debug mode")
-    log_level: str = Field(default="INFO", description="Logging level")
+    app_name: str = Field(default="PydanticAI Agent")
+    debug: bool = Field(default=False)
+    log_level: str = Field(default="INFO")
     
-    # Provider settings (loaded from env vars)
-    ollama_base_url: str = Field(
-        default="http://localhost:11434/v1",
-        description="Base URL for Ollama provider"
-    )
-    openai_api_key: Optional[str] = Field(
-        default=None,
-        description="OpenAI API key"
-    )
+    # Provider settings
+    ollama_base_url: str = Field(default="http://localhost:11434/v1")
+    openai_api_key: Optional[str] = Field(default=None)
     
     # Default model settings
     default_model: str = Field(
@@ -99,12 +76,57 @@ class Config(BaseSettings):
         le=2.0,
         description="Default temperature for generation"
     )
+    default_retries: int = Field(default=2)
+    
+    # Agent-specific model settings (loaded from .env)
+    coordinator_model: Optional[str] = Field(default=None)
+    coordinator_temperature: Optional[float] = Field(default=None)
+    
+    codebase_model: Optional[str] = Field(default=None)
+    codebase_temperature: Optional[float] = Field(default=None)
+    
+    file_editor_model: Optional[str] = Field(default=None)
+    file_editor_temperature: Optional[float] = Field(default=None)
+    
+    testing_model: Optional[str] = Field(default=None)
+    testing_temperature: Optional[float] = Field(default=None)
+    
+    documentation_model: Optional[str] = Field(default=None)
+    documentation_temperature: Optional[float] = Field(default=None)
+    
+    refactoring_model: Optional[str] = Field(default=None)
+    refactoring_temperature: Optional[float] = Field(default=None)
     
     # Agent configurations
     agents: dict[str, AgentConfigSpec] = Field(
         default_factory=dict,
         description="Agent configurations by name"
     )
+    
+    def get_agent_model(self, agent_type: str) -> str:
+        """Get model for specific agent type, falling back to default."""
+        model_map = {
+            "coordinator": self.coordinator_model,
+            "codebase": self.codebase_model,
+            "file_editor": self.file_editor_model,
+            "testing": self.testing_model,
+            "documentation": self.documentation_model,
+            "refactoring": self.refactoring_model,
+        }
+        return model_map.get(agent_type) or self.default_model
+    
+    def get_agent_temperature(self, agent_type: str) -> float:
+        """Get temperature for specific agent type, falling back to default."""
+        temp_map = {
+            "coordinator": self.coordinator_temperature,
+            "codebase": self.codebase_temperature,
+            "file_editor": self.file_editor_temperature,
+            "testing": self.testing_temperature,
+            "documentation": self.documentation_temperature,
+            "refactoring": self.refactoring_temperature,
+        }
+        temp = temp_map.get(agent_type)
+        return temp if temp is not None else self.default_temperature
     
     def get_agent_config(self, name: str) -> Optional[AgentConfigSpec]:
         """Get configuration for a specific agent."""
