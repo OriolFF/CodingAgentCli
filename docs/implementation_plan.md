@@ -646,8 +646,31 @@ async def delegate_to_specialist(
 
 ---
 
-## PHASE 5: Services Layer (Steps 33-37)
+## Phase 5: Services Layer 🔄 DEFERRED
 
+**Decision**: Defer Phase 5 to avoid over-engineering.
+
+**Reasoning**:
+- **Tools + Agents architecture is sufficient** - No abstraction gap
+- **Services add complexity without clear benefit** at this stage
+- **Solo developer project** - Don't need team coordination boundaries
+- **YAGNI principle** - Build services only when actual pain points emerge
+- **Better to focus on CLI** - Provides immediate user value
+
+**When to revisit**:
+- If copy-pasting same multi-tool logic 3+ times
+- When adding cloud integrations or external APIs
+- If transaction/state management becomes complex
+- When team grows beyond solo development
+
+**Deferred Steps**:
+- [ ] Step 33: File Discovery Service (can use tools directly)
+- [ ] Step 34: Git Service (can add as simple helper when needed)
+- [ ] Step 35: Context Manager Service (MemoryTool is sufficient)
+- [ ] Step 36: File System Service (WriteFileTool handles this)
+- [ ] Step 37: Shell Execution Service (ShellExecutionTool is sufficient)
+
+See `artifacts/phase5_services_explained.md` for full analysis.
 ### Step 33: File Discovery Service
 **Files to Create**:
 - `packages/core/services/file_discovery.py`
