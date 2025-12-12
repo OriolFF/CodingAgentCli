@@ -1,9 +1,21 @@
 """Tests for agent registry."""
 
 import pytest
+import os
 from pydantic_ai import Agent
+from pydantic_ai.providers.ollama import OllamaProvider
 from packages.core.agents.registry import AgentRegistry, get_agent_registry
 from packages.core.utils.errors import AgentError
+
+
+@pytest.fixture(autouse=True)
+def set_ollama_url():
+    """Set OLLAMA_BASE_URL for tests."""
+    os.environ["OLLAMA_BASE_URL"] = "http://localhost:11434/v1"
+    yield
+    # Optionally clean up
+    if "OLLAMA_BASE_URL" in os.environ:
+        del os.environ["OLLAMA_BASE_URL"]
 
 
 def test_register_agent():
@@ -92,7 +104,7 @@ def test_clear_registry():
     registry.register("agent1", agent1)
     registry.register("agent2", agent2)
     
-    registry.clear()
+   registry.clear()
     
     assert len(registry.list_agents()) == 0
 
