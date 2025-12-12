@@ -1,18 +1,14 @@
 """Configuration package initialization.
 
-This ensures configuration is loaded early and environment variables
-are set before any agents are created.
+Call init_config() at application startup to ensure environment
+variables are set before creating agents.
 """
 
-from .config import Config, get_config, init_config, AgentConfigSpec, ProviderConfig
-
-# Initialize config at import time to set environment variables
-init_config()
+from .config import Config, get_config, init_config, AgentConfigSpec
 
 __all__ = [
     "Config",
     "get_config",
     "init_config",
     "AgentConfigSpec",
-    "ProviderConfig",
 ]
