@@ -726,7 +726,39 @@ See `artifacts/phase5_services_explained.md` for full analysis.
 
 ---
 
-## PHASE 6: Safety & Policy (Steps 38-40)
+## Phase 6: Safety & Policy 🔄 DEFERRED
+
+**Decision**: Defer Phase 6 - safety features already covered by existing tools.
+
+**Reasoning**:
+- **Human-in-the-loop already implemented** - Step 25 provides approval system
+- **Policy engine is premature** - Solo project doesn't need complex policies
+- **Safety checks exist in tools** - ShellExecutionTool has `allow_dangerous` flag
+- **Over-engineering risk** - Adding layers without clear need
+- **CLI provides natural safety** - User sees and approves actions in terminal
+
+**What we already have**:
+- ✅ Approval system in tools (Step 25)
+- ✅ Dangerous operation flags (`allow_dangerous`)
+- ✅ Tool-level error handling
+- ✅ Agent retry logic with limits
+
+**When to revisit**:
+- If deploying as autonomous service (no human oversight)
+- When adding dangerous operations that need pre-approval
+- If building policy-driven workflows for teams
+- When compliance/audit requirements emerge
+
+**Deferred Steps**:
+- [ ] Step 38: Confirmation Bus (approval system already exists)
+- [ ] Step 39: Policy Engine (not needed for solo development)
+- [ ] Step 40: Safety Checks (covered by tool-level safety)
+
+**Alternative approach**: Add lightweight safety helpers as needed rather than full policy framework.
+
+---
+
+## PHASE 7: CLI Interface (Steps 41-48) 📍 CURRENT
 
 ### Step 38: Confirmation Bus
 **Files to Create**:
