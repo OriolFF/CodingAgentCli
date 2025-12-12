@@ -175,8 +175,9 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
                 prompt,
                 model_settings=ModelSettings(tool_choice='required')
             )
-            files_modified = ", ".join(result.data.files_modified)
-            return f"Files edited: {files_modified}\n{result.data.changes_summary}"
+            # Handle text-only response
+            output = result.output if hasattr(result, 'output') else str(result.data)
+            return f"File editor result:\n{output}"
         except Exception as e:
             logger.error(f"File editing failed: {e}")
             return f"Edit failed: {str(e)}"
