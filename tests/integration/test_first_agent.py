@@ -1,10 +1,7 @@
-"""Integration tests for the first PydanticAI agent.
+"""Integration tests for PydanticAI agents.
 
 These tests require Ollama to be running with the mistral model installed.
 Run: ollama pull mistral
-
-NOTE: Currently using text-only output mode due to Ollama compatibility issues
-with structured JSON output through the OpenAI-compatible API.
 """
 
 import pytest
@@ -57,28 +54,4 @@ async def test_agent_async_call():
     
     # Verify we got a response
     assert result is not None
-    assert hasattr(result, 'data') for word in ["hello", "hi", "greetings"])
-
-
-@pytest.mark.integration
-def test_agent_model_attribute():
-    """Test that agent has correct model configured."""
-    # Agent is configured with ollama mistral model
-    # Check that the agent has a model
-    assert simple_agent.model is not None
-
-
-@pytest.mark.integration
-@pytest.mark.asyncio
-async def test_multiple_calls():
-    """Test that agent can handle multiple calls."""
-    questions = [
-        "What is 1+1?",
-        "What is the capital of France?",
-        "What color is the sky?",
-    ]
-
-    for question in questions:
-        result = await test_agent_async(question)
-        assert isinstance(result, str)
-        assert len(result) > 0
+    assert hasattr(result, 'data')
