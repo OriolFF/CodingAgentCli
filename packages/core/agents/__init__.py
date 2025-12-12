@@ -11,10 +11,12 @@ def _ensure_specialized_agents_imported():
     """Lazy import of specialized agents."""
     global _specialized_agents_imported, codebase_agent, analyze_codebase, CodeAnalysis
     global file_editor_agent, edit_files, EditResult
+    global coordinator_agent, delegate_task, DelegationResult
     
     if not _specialized_agents_imported:
         from .codebase_investigator import get_codebase_agent, analyze_codebase, CodeAnalysis
         from .file_editor import get_file_editor_agent, edit_files, EditResult
+        from .delegation import get_coordinator_agent, delegate_task, DelegationResult
         
         # Make them available at module level
         globals()['codebase_agent'] = get_codebase_agent()
@@ -23,6 +25,9 @@ def _ensure_specialized_agents_imported():
         globals()['file_editor_agent'] = get_file_editor_agent()
         globals()['edit_files'] = edit_files
         globals()['EditResult'] = EditResult
+        globals()['coordinator_agent'] = get_coordinator_agent()
+        globals()['delegate_task'] = delegate_task
+        globals()['DelegationResult'] = DelegationResult
         
         _specialized_agents_imported = True
 
