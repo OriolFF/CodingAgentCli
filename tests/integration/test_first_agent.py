@@ -37,9 +37,11 @@ def test_agent_sync_call():
     # Make a simple sync call
     result = agent.run_sync("Say hello in one word")
     
-    # Verify we got a response
+    # Verify we got a response (AgentRunResult has 'output', not 'data' for text mode)
     assert result is not None
-    assert hasattr(result, 'data')
+    assert hasattr(result, 'output')
+    assert isinstance(result.output, str)
+    assert len(result.output) > 0
 
 
 @pytest.mark.integration
@@ -54,4 +56,6 @@ async def test_agent_async_call():
     
     # Verify we got a response
     assert result is not None
-    assert hasattr(result, 'data')
+    assert hasattr(result, 'output')
+    assert isinstance(result.output, str)
+    assert len(result.output) > 0

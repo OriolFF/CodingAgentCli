@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 
 class CodeAnalysis(BaseModel):
-   """Structured output for code analysis."""
+    """Structured output for code analysis."""
     summary: str = Field(description="Overall summary of the code/codebase")
     key_files: List[str] = Field(description="Important files identified")
     patterns: List[str] = Field(description="Patterns or conventions found")
