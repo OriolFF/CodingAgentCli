@@ -28,7 +28,6 @@ class EditResult(BaseModel):
 # Create the file editor agent
 file_editor_agent = Agent(
     "ollama:mistral",
-    result_type=EditResult,
     system_prompt="""You are a precise code editor specializing in making targeted,
 minimal changes to code files.
 
