@@ -244,8 +244,12 @@ async def delegate_task(
     # Parse text output into DelegationResult
     output = result.output if hasattr(result, 'output') else str(result.data)
     
-    # Simple parsing - look for SUCCESS, RESULT, AGENTS_USED, SUMMARY
-    success = "SUCCESS: true" in output.lower() or "success" in output.lower()
+    # Detect success/failure - default to success unless clear error
+    error_indicators = [
+        "error:", "failed:", "exception:", "could not", "unable to",
+        "not found", "does not exist", "cannot"
+    ]
+    success = not any(indicator in output.lower() for indicator in error_indicators)
     
     # Extract agents used (simple heuristic)
     agents_used = []
