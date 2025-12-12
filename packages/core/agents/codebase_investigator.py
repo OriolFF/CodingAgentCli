@@ -146,127 +146,6 @@ Be concise but thorough in your analysis.""",
     return agent
 
 
-# For backwards compatibility
-codebase_agent = property(lambda self: get_codebase_agent())
-
-
-async def analyze_codebase(directory: str = ".", focus: Optional[str] = None) -> CodeAnalysis:
-    """Analyze the structure of a directory.
-    
-    Args:
-        ctx: Runtime context
-        directory: Directory to analyze
-        
-    Returns:
-        Description of directory structure
-    """
-    tool = ListDirectoryTool()
-    result = await tool.execute(directory=directory, show_hidden=False, max_depth=2)
-    
-    if result.success:
-        logger.info(f"Analyzed directory structure: {directory}")
-        return f"Directory structure:\n{result.output}"
-    else:
-        return f"Error analyzing directory: {result.error}"
-
-
-@codebase_agent.tool
-async def find_files_by_pattern(
-    ctx: RunContext[None],
-    pattern: str,
-    directory: str = "."
-) -> str:
-    """Find files matching a glob pattern.
-    
-    Args:
-        ctx: Runtime context
-        pattern: Glob pattern (e.g., "*.py", "**/*.ts")
-        directory: Directory to search in
-        
-    Returns:
-        List of matching files
-    """
-    tool = GlobSearchTool()
-    result = await tool.execute(
-        pattern=pattern,
-        directory=directory,
-        recursive=True,
-        max_results=100
-    )
-    
-    if result.success:
-        logger.info(f"Found {result.metadata['match_count']} files matching '{pattern}'")
-        return f"Files matching '{pattern}':\n{result.output}"
-    else:
-        return f"Error finding files: {result.error}"
-
-
-@codebase_agent.tool
-async def search_code_content(
-    ctx: RunContext[None],
-    pattern: str,
-    file_pattern: str = "*.py",
-    directory: str = "."
-) -> str:
-    """Search for patterns in code files.
-    
-    Args:
-        ctx: Runtime context
-        pattern: Regex pattern to search for
-        file_pattern: File pattern to search (e.g., "*.py")
-        directory: Directory to search in
-        
-    Returns:
-        Matching lines with file locations
-    """
-    tool = GrepSearchTool()
-    result = await tool.execute(
-        pattern=pattern,
-        directory=directory,
-        file_pattern=file_pattern,
-        case_sensitive=True,
-        max_results=50
-    )
-    
-    if result.success:
-        logger.info(f"Found {result.metadata['match_count']} matches for '{pattern}'")
-        return f"Search results for '{pattern}':\n{result.output}"
-    else:
-        return f"Error searching code: {result.error}"
-
-
-@codebase_agent.tool
-async def read_file_content(
-    ctx: RunContext[None],
-    file_path: str,
-    start_line: Optional[int] = None,
-    end_line: Optional[int] = None
-) -> str:
-    """Read the contents of a file.
-    
-    Args:
-        ctx: Runtime context
-        file_path: Path to the file
-        start_line: Optional start line (1-indexed)
-        end_line: Optional end line (1-indexed, inclusive)
-        
-    Returns:
-        File contents
-    """
-    tool = ReadFileTool()
-    result = await tool.execute(
-        file_path=file_path,
-        start_line=start_line,
-        end_line=end_line
-    )
-    
-    if result.success:
-        logger.info(f"Read file: {file_path}")
-        return f"Contents of {file_path}:\n{result.output}"
-    else:
-        return f"Error reading file: {result.error}"
-
-
 async def analyze_codebase(directory: str = ".", focus: Optional[str] = None) -> CodeAnalysis:
     """Analyze a codebase and provide insights.
     
@@ -277,6 +156,8 @@ async def analyze_codebase(directory: str = ".", focus: Optional[str] = None) ->
     Returns:
         CodeAnalysis with findings and recommendations
     """
+    agent = get_codebase_agent()
+    
     prompt = f"Analyze the codebase in directory '{directory}'."
     if focus:
         prompt += f" Focus on: {focus}."
@@ -292,5 +173,15 @@ async def analyze_codebase(directory: str = ".", focus: Optional[str] = None) ->
     Provide a comprehensive analysis with specific examples and actionable recommendations.
     """
     
-    result = await codebase_agent.run(prompt)
-    return result.data
+    result = await agent.run(prompt)
+    
+    # Since we're in text mode, parse the response into CodeAnalysis
+    # For now, return a simple structure
+    return CodeAnalysis(
+        summary=result.output if hasattr(result, 'output') else str(result.data),
+        key_files=[],
+        patterns=[],
+        suggestions=[],
+        complexity_score=5
+    )
+
