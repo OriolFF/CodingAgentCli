@@ -15,7 +15,7 @@ logger = get_logger(__name__)
 
 
 class CodeAnalysis(BaseModel):
-    """Structured output for code analysis."""
+   """Structured output for code analysis."""
     summary: str = Field(description="Overall summary of the code/codebase")
     key_files: List[str] = Field(description="Important files identified")
     patterns: List[str] = Field(description="Patterns or conventions found")
@@ -27,11 +27,32 @@ class CodeAnalysis(BaseModel):
     )
 
 
-# Create the codebase investigator agent
-codebase_agent = Agent(
-    "ollama:mistral",
-    result_type=CodeAnalysis,
-    system_prompt="""You are an expert code analyst and software architect.
+# Lazy initialization to avoid requiring OLLAMA_BASE_URL at import time
+_codebase_agent: Optional[Agent] = None
+
+
+def get_codebase_agent() -> Agent:
+    """Get or create the codebase investigator agent.
+    
+    Returns:
+        The codebase investigator agent
+    """
+    global _codebase_agent
+    if _codebase_agent is None:
+        _codebase_agent = _create_codebase_agent()
+    return _codebase_agent
+
+
+def _create_codebase_agent() -> Agent:
+    """Create the codebase investigator agent with tools.
+    
+    Returns:
+        Configured agent
+    """
+    agent = Agent(
+        "ollama:mistral",
+        result_type=CodeAnalysis,
+        system_prompt="""You are an expert code analyst and software architect.
     
 Your role is to analyze codebases, identify patterns, assess code quality,
 and provide actionable insights for improvement.
@@ -44,13 +65,92 @@ When analyzing code:
 5. Be specific and provide examples
 
 Be concise but thorough in your analysis.""",
-    retries=2,
-)
+        retries=2,
+    )
+    
+    # Register tools manually
+    
+    @agent.tool
+    async def analyze_directory_structure(ctx: RunContext[None], directory: str = ".") -> str:
+        """Analyze the structure of a directory."""
+        tool = ListDirectoryTool()
+        result = await tool.execute(directory=directory, show_hidden=False, max_depth=2)
+        
+        if result.success:
+            logger.info(f"Analyzed directory structure: {directory}")
+            return f"Directory structure:\n{result.output}"
+        else:
+            return f"Error analyzing directory: {result.error}"
+    
+    @agent.tool
+    async def find_files_by_pattern(ctx: RunContext[None], pattern: str, directory: str = ".") -> str:
+        """Find files matching a glob pattern."""
+        tool = GlobSearchTool()
+        result = await tool.execute(
+            pattern=pattern,
+            directory=directory,
+            recursive=True,
+            max_results=100
+        )
+        
+        if result.success:
+            logger.info(f"Found {result.metadata['match_count']} files matching '{pattern}'")
+            return f"Files matching '{pattern}':\n{result.output}"
+        else:
+            return f"Error finding files: {result.error}"
+    
+    @agent.tool
+    async def search_code_content(
+        ctx: RunContext[None],
+        pattern: str,
+        file_pattern: str = "*.py",
+        directory: str = "."
+    ) -> str:
+        """Search for patterns in code files."""
+        tool = GrepSearchTool()
+        result = await tool.execute(
+            pattern=pattern,
+            directory=directory,
+            file_pattern=file_pattern,
+            case_sensitive=True,
+            max_results=50
+        )
+        
+        if result.success:
+            logger.info(f"Found {result.metadata['match_count']} matches for '{pattern}'")
+            return f"Search results for '{pattern}':\n{result.output}"
+        else:
+            return f"Error searching code: {result.error}"
+    
+    @agent.tool
+    async def read_file_content(
+        ctx: RunContext[None],
+        file_path: str,
+        start_line: Optional[int] = None,
+        end_line: Optional[int] = None
+    ) -> str:
+        """Read the contents of a file."""
+        tool = ReadFileTool()
+        result = await tool.execute(
+            file_path=file_path,
+            start_line=start_line,
+            end_line=end_line
+        )
+        
+        if result.success:
+            logger.info(f"Read file: {file_path}")
+            return f"Contents of {file_path}:\n{result.output}"
+        else:
+            return f"Error reading file: {result.error}"
+    
+    return agent
 
 
-# Register tools with the agent
-@codebase_agent.tool
-async def analyze_directory_structure(ctx: RunContext[None], directory: str = ".") -> str:
+# For backwards compatibility
+codebase_agent = property(lambda self: get_codebase_agent())
+
+
+async def analyze_codebase(directory: str = ".", focus: Optional[str] = None) -> CodeAnalysis:
     """Analyze the structure of a directory.
     
     Args:
