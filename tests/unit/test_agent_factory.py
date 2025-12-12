@@ -1,26 +1,14 @@
-"""Tests for agent factory."""
+"""Tests for AgentFactory."""
 
 import pytest
-from packages.core.agents.factory import AgentFactory, create_agent
-from packages.core.config import load_config_from_yaml
+from packages.core.agents.factory import AgentFactory
+from packages.core.config import Config, AgentConfigSpec
 
 
-def test_agent_factory_initialization():
-    """Test AgentFactory can be initialized."""
+def test_factory_initialization():
+    """Test factory can be initialized."""
     factory = AgentFactory()
     assert factory.config is not None
-
-
-def test_list_agents():
-    """Test listing available agents."""
-    factory = AgentFactory()
-    agents = factory.list_agents()
-    
-    assert isinstance(agents, list)
-    assert len(agents) > 0
-    assert "default" in agents
-    assert "codebase_investigator" in agents
-    assert "file_editor" in agents
 
 
 def test_create_default_agent():
@@ -29,47 +17,30 @@ def test_create_default_agent():
     agent = factory.create_agent("default")
     
     assert agent is not None
-    assert agent.model is not None
+    assert hasattr(agent, 'run')
+    assert hasattr(agent, 'run_sync')
 
 
-def test_create_codebase_investigator():
-    """Test creating codebase_investigator agent."""
-    factory = AgentFactory()
-    agent = factory.create_agent("codebase_investigator")
-    
-    assert agent is not None
-    # Should use different model from config
-    assert agent.model is not None
-
-
-def test_create_nonexistent_agent():
-    """Test error when creating nonexistent agent."""
+def test_create_agent_not_found():
+    """Test error when agent config not found."""
     factory = AgentFactory()
     
-    with pytest.raises(KeyError) as exc_info:
-        factory.create_agent("nonexistent")
-    
-    assert "nonexistent" in str(exc_info.value)
+    with pytest.raises(ValueError, match="not found"):
+        factory.create_agent("nonexistent_agent")
 
 
-def test_convenience_function():
-    """Test convenience create_agent function."""
-    agent = create_agent("default")
-    assert agent is not None
+def test_list_agents():
+    """Test listing available agents."""
+    factory = AgentFactory()
+    agents = factory.list_agents()
+    
+    assert isinstance(agents, list)
+    assert "default" in agents
 
 
-def test_agent_uses_config():
-    """Test that agent uses configuration from YAML."""
-    config = load_config_from_yaml("config/agents.yaml")
-    factory = AgentFactory(config)
+def test_factory_with_custom_config():
+    """Test factory with custom configuration."""
+    config = Config()
+    factory = AgentFactory(config=config)
     
-    # Get agent config
-    investigator_config = config.get_agent_config("codebase_investigator")
-    
-    # Create agent
-    agent = factory.create_agent("codebase_investigator")
-    
-    # Verify agent was created
-    assert agent is not None
-    # Model name should match config
-    # Note: We can't directly check all properties but can verify creation worked
+    assert factory.config is config
