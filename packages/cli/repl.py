@@ -229,29 +229,50 @@ The coordinator agent will automatically route your request to the appropriate s
                 self.console.print(f"[red]Error: {str(e)}[/red]")
     
     def display_result(self, result: DelegationResult):
-        """Display delegation result with formatting.
+        """Display delegation result with rich formatting.
         
         Args:
             result: Result to display
         """
         from rich.syntax import Syntax
+        from rich.table import Table
         
         # Show which agents were used
         if result.agents_used:
             agents_str = ", ".join(result.agents_used)
-            self.console.print(f"[dim]Agents used: {agents_str}[/dim]")
+            self.console.print(f"[dim]🤖 Agents: {agents_str}[/dim]\n")
         
-        # Show result in panel
-        panel = Panel(
-            result.result,
-            title="✓ Result" if result.success else "✗ Error",
-            border_style="green" if result.success else "red",
-        )
-        self.console.print(panel)
+        # Check if result contains code blocks
+        if "```" in result.result:
+            # Extract and syntax highlight code blocks
+            parts = result.result.split("```")
+            for i, part in enumerate(parts):
+                if i % 2 == 0:
+                    # Regular text
+                    if part.strip():
+                        self.console.print(part)
+                else:
+                    # Code block
+                    lines = part.split("\n")
+                    lang = lines[0].strip() if lines else "python"
+                    code = "\n".join(lines[1:]) if len(lines) > 1 else part
+                    
+                    syntax = Syntax(code, lang, theme="monokai", line_numbers=True)
+                    self.console.print(syntax)
+        else:
+            # Show result in panel
+            panel = Panel(
+                result.result,
+                title="✅ Success" if result.success else "❌ Error",
+                border_style="green" if result.success else "red",
+                padding=(1, 2)
+            )
+            self.console.print(panel)
         
-        # Show summary
-        if result.task_summary != result.result:
-            self.console.print(f"[dim italic]{result.task_summary}[/dim italic]")
+        # Show summary if different from result
+        if result.task_summary and result.task_summary != result.result[:200]:
+            self.console.print(f"\n[dim italic]Summary: {result.task_summary}[/dim italic]")
+
     
     async def process_input(self, user_input: str) -> bool:
         """Process user input.
