@@ -102,7 +102,7 @@ async def test_approval_system_clear_always_approved():
     tool = DummyTool(name="test_tool")
     
     # Approve once
-   await system.execute_with_approval(tool, action="test")
+    await system.execute_with_approval(tool, action="test")
     assert "test_tool" in system.always_approved_tools
     
     # Clear
