@@ -41,16 +41,53 @@ class AgentREPL:
         self.active_agent = None
         self.history_file = Path.home() / ".pydantic_agent_history"
         
-        # Create completer for commands
-        completions = list(self.COMMANDS.keys()) + [
-            "analyze", "edit", "generate", "refactor", "test", "docs"
-        ]
-        self.completer = WordCompleter(completions, ignore_case=True)
+        # Create completer with comprehensive suggestions
+        from prompt_toolkit.completion import WordCompleter, PathCompleter, merge_completers
         
-        # Create prompt session with history
+        # System commands
+        command_words = list(self.COMMANDS.keys())
+        
+        # Common agent action words
+        action_words = [
+            "analyze", "analyse", "check", "review", "examine",
+            "generate", "create", "make", "build",
+            "refactor", "improve", "optimize", "clean",
+            "edit", "modify", "change", "update",
+            "test", "verify", "validate",
+            "explain", "describe", "what", "how", "why",
+            "list", "show", "display", "find", "search",
+            "document", "docs", "readme",
+        ]
+        
+        # File and directory common patterns
+        common_paths = [
+            "packages/", "packages/core/", "packages/cli/",
+            "packages/core/agents/", "packages/core/tools/",
+            "packages/core/config/", "tests/", "docs/",
+            ".py", ".md", ".yaml", ".toml",
+        ]
+        
+        # Combine completers
+        word_completer = WordCompleter(
+            command_words + action_words + common_paths,
+            ignore_case=True,
+            sentence=True  # Allow multi-word completion
+        )
+        
+        # Path completer for file paths
+        path_completer = PathCompleter(
+            expanduser=True,
+            only_directories=False,
+        )
+        
+        # Merge both completers
+        self.completer = merge_completers([word_completer, path_completer])
+        
+        # Create prompt session with enhanced completion
         self.session = PromptSession(
             history=FileHistory(str(self.history_file)),
             completer=self.completer,
+            complete_while_typing=True,  # Show suggestions while typing
         )
         
         logger.info("REPL initialized")
