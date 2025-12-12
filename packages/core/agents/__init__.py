@@ -1,5 +1,6 @@
-"""Agents package - PydanticAI agent implementations."""
+"""Agents package for PydanticAI agents."""
 
-from .base import simple_agent, test_agent_sync, test_agent_async
+from .factory import AgentFactory, create_agent
+from .registry import AgentRegistry, get_agent_registry
 
-__all__ = ["simple_agent", "test_agent_sync", "test_agent_async"]
+__all__ = ["AgentFactory", "create_agent", "AgentRegistry", "get_agent_registry"]
