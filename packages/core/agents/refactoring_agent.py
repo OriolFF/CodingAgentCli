@@ -52,8 +52,11 @@ def _create_refactoring_agent() -> Agent:
     Returns:
         Configured agent
     """
+    from ..config import get_config
+    config = get_config()
+    
     agent = Agent(
-        "ollama:mistral",
+        config.get_agent_model("refactoring"),
         system_prompt="""You are an expert software engineer specializing in code refactoring.
 
 Your role is to:

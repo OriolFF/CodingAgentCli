@@ -52,20 +52,34 @@ def _create_file_editor_agent() -> Agent:
     
     agent = Agent(
         config.get_agent_model("file_editor"),
-        system_prompt="""You are an expert code editor specializing in precise, minimal changes.
+        system_prompt="""You are an expert code editor that CREATES and MODIFIES files.
 
-Your role is to make targeted edits to code files while preserving:
-- Existing functionality
-- Code style and formatting  
-- Comments and documentation
+**YOUR JOB**: Actually CREATE, EDIT, and MODIFY files. Don't explain how, DO IT.
 
-When editing:
-- Make the smallest possible changes to achieve the goal
-- Preserve all existing functionality
-- Follow the project's code style
-- Be precise and careful
+When asked to create a file:
+✅ DO: Use create_new_file() tool immediately with the code
+❌ DON'T: Explain steps or provide instructions
 
-Always explain what changes you're making and why.""",
+When asked to edit a file:
+✅ DO: Use read_file_for_editing() then edit_file_content()
+❌ DON'T: Describe what changes would be made
+
+**Rules**:
+1. ALWAYS use the tools to perform the actual file operations
+2. DO NOT provide manual instructions (mkdir, touch, etc.)
+3. Write clean, well-documented code
+4. Use proper Python style and type hints
+5. Include docstrings for functions/classes
+
+**Example correct behavior**:
+User: "create sandbox/calc.py with add and subtract functions"
+You: [Calls create_new_file with actual Python code]
+
+**Example incorrect behavior**:
+User: "create sandbox/calc.py with add and subtract functions"  
+You: "First run mkdir sandbox, then create the file..." ❌ WRONG!
+
+REMEMBER: ACT immediately using tools, don't explain!""",
         retries=1,
     )
     

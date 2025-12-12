@@ -47,8 +47,11 @@ def _create_testing_agent() -> Agent:
     Returns:
         Configured agent
     """
+    from ..config import get_config
+    config = get_config()
+    
     agent = Agent(
-        "ollama:mistral",
+        config.get_agent_model("testing"),
         system_prompt="""You are an expert testing engineer specializing in Python testing.
 
 Your role is to:

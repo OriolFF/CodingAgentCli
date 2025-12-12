@@ -47,8 +47,11 @@ def _create_documentation_agent() -> Agent:
     Returns:
         Configured agent
     """
+    from ..config import get_config
+    config = get_config()
+    
     agent = Agent(
-        "ollama:mistral",
+        config.get_agent_model("documentation"),
         system_prompt="""You are an expert technical writer specializing in software documentation.
 
 Your role is to:

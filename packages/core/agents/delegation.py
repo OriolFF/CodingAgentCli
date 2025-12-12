@@ -167,7 +167,12 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
             prompt += f"\nContext: {file_context}"
         
         try:
-            result = await file_editor_agent.run(prompt)
+            # Force tool usage with tool_choice=required
+            from pydantic_ai import ModelSettings
+            result = await file_editor_agent.run(
+                prompt,
+                model_settings=ModelSettings(tool_choice='required')
+            )
             files_modified = ", ".join(result.data.files_modified)
             return f"Files edited: {files_modified}\n{result.data.changes_summary}"
         except Exception as e:
