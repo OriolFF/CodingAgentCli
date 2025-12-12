@@ -46,9 +46,9 @@ def _create_coordinator_agent() -> Agent:
     Returns:
         Configured coordinator agent
     """
+    # Note: Using text-only mode since structured output needs careful setup
     agent = Agent(
         "ollama:mistral",
-        result_type=DelegationResult,
         system_prompt="""You are an intelligent task coordinator and delegator.
 
 Your role is to:
@@ -68,7 +68,11 @@ When handling requests:
 - Use search_code for "find", "search", "locate" requests
 - You can chain multiple agents for complex tasks
 
-Always explain what you're doing and provide clear, helpful responses.""",
+Respond in this format:
+SUCCESS: true/false
+RESULT: <detailed result>
+AGENTS_USED: <comma-separated list of agents>
+SUMMARY: <brief summary>""",
         retries=2,
     )
     
@@ -222,4 +226,23 @@ async def delegate_task(
     logger.info(f"Delegating task: {request}")
     
     result = await coordinator.run(prompt)
-    return result.data
+    
+    # Parse text output into DelegationResult
+    output = result.output if hasattr(result, 'output') else str(result.data)
+    
+    # Simple parsing - look for SUCCESS, RESULT, AGENTS_USED, SUMMARY
+    success = "SUCCESS: true" in output.lower() or "success" in output.lower()
+    
+    # Extract agents used (simple heuristic)
+    agents_used = []
+    if "analyze_codebase" in output or "codebase" in output.lower():
+        agents_used.append("codebase_investigator")
+    if "edit_files" in output or "editor" in output.lower():
+        agents_used.append("file_editor")
+    
+    return DelegationResult(
+        success=success,
+        result=output,
+        agents_used=agents_used,
+        task_summary=output[:200] + "..." if len(output) > 200 else output
+    )
