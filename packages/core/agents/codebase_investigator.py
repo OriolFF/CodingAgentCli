@@ -52,8 +52,11 @@ def _create_codebase_agent() -> Agent:
     from ..config import get_config
     config = get_config()
     
+    model_instance = config.get_model_instance("codebase")
+    logger.info(f"Initializing codebase agent with model: {model_instance}")
+    
     agent = Agent(
-        config.get_agent_model("codebase"),
+        model_instance,
         system_prompt="""You are an expert code analyst and software architect.
 
 Your role is to analyze codebases, identify patterns, assess code quality,

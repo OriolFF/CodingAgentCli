@@ -50,8 +50,11 @@ def _create_testing_agent() -> Agent:
     from ..config import get_config
     config = get_config()
     
+    model_instance = config.get_model_instance("testing")
+    logger.info(f"Initializing testing agent with model: {model_instance}")
+    
     agent = Agent(
-        config.get_agent_model("testing"),
+        model_instance,
         system_prompt="""You are an expert testing engineer specializing in Python testing.
 
 Your role is to:

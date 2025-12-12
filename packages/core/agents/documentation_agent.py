@@ -50,8 +50,11 @@ def _create_documentation_agent() -> Agent:
     from ..config import get_config
     config = get_config()
     
+    model_instance = config.get_model_instance("documentation")
+    logger.info(f"Initializing documentation agent with model: {model_instance}")
+    
     agent = Agent(
-        config.get_agent_model("documentation"),
+        model_instance,
         system_prompt="""You are an expert technical writer specializing in software documentation.
 
 Your role is to:

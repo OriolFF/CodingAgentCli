@@ -49,9 +49,12 @@ def _create_coordinator_agent() -> Agent:
     from ..config import get_config
     config = get_config()
     
+    model_instance = config.get_model_instance("coordinator")
+    logger.info(f"Initializing coordinator agent with model: {model_instance}")
+    
     # Note: Using text-only mode since structured output needs careful setup
     agent = Agent(
-        config.get_agent_model("coordinator"),
+        model_instance,
         system_prompt="""You are an intelligent task coordinator for a multi-agent system.
 
 **YOUR JOB**: Actually USE the tools to complete user requests. Don't explain, DO.

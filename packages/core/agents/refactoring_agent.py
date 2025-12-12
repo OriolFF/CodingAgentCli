@@ -55,8 +55,11 @@ def _create_refactoring_agent() -> Agent:
     from ..config import get_config
     config = get_config()
     
+    model_instance = config.get_model_instance("refactoring")
+    logger.info(f"Initializing refactoring agent with model: {model_instance}")
+    
     agent = Agent(
-        config.get_agent_model("refactoring"),
+        model_instance,
         system_prompt="""You are an expert software engineer specializing in code refactoring.
 
 Your role is to:

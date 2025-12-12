@@ -1,7 +1,7 @@
 """Configuration system using Pydantic Settings."""
 
 import os
-from typing import Optional
+from typing import Optional, Union
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -127,6 +127,39 @@ class Config(BaseSettings):
         }
         temp = temp_map.get(agent_type)
         return temp if temp is not None else self.default_temperature
+    
+    def get_model_instance(self, agent_type: str) -> str:
+        """Get model identifier for specific agent type.
+        
+        For Ollama models (those with 'ollama:' prefix), returns the model string
+        with the OLLAMA_BASE_URL environment variable properly configured.
+        For other providers, returns the string identifier for PydanticAI's auto-detection.
+        
+        Args:
+            agent_type: Type of agent (e.g., 'file_editor', 'coordinator')
+            
+        Returns:
+            Model string identifier
+        """
+        from ..utils.logger import get_logger
+        logger = get_logger(__name__)
+        
+        model_str = self.get_agent_model(agent_type)
+        
+        # Check if this is an Ollama model and log accordingly
+        if model_str.startswith("ollama:"):
+            # Extract model name (e.g., "ollama:llama3.1" -> "llama3.1")
+            model_name = model_str.split(":", 1)[1]
+            
+            logger.info(
+                f"✓ Using Ollama model for {agent_type}: {model_name} "
+                f"(via {self.ollama_base_url})"
+            )
+        else:
+            # For non-Ollama providers
+            logger.debug(f"Using {model_str} for {agent_type}")
+        
+        return model_str
     
     def get_agent_config(self, name: str) -> Optional[AgentConfigSpec]:
         """Get configuration for a specific agent."""

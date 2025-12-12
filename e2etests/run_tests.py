@@ -169,10 +169,86 @@ class E2ETestRunner:
                 "command": "generate sandbox/hello_cli.py with a click-based CLI that has a hello command",
                 "criteria": "Imports click, has @click.command"
             },
+            
+            # Category 3: File Manipulation (Tests 17-22)
+            # Test 17
+            {
+                "command": "create sandbox/counter.py with a Counter class, then add a reset() method to it",
+                "criteria": "File created with Counter class and reset() method"
+            },
+            # Test 18
+            {
+                "command": "in sandbox/calculator.py, add type hints to all functions",
+                "criteria": "All functions have type annotations"
+            },
+            # Test 19
+            {
+                "command": "add docstrings to all functions in sandbox/string_utils.py",
+                "criteria": "Each function has docstring"
+            },
+            # Test 20
+            {
+                "command": "create sandbox/math_ops.py and move add/subtract from calculator.py there",
+                "criteria": "Functions moved, imports updated"
+            },
+            # Test 21
+            {
+                "command": "in sandbox/person.py, rename 'age' to 'years_old' everywhere",
+                "criteria": "No 'age' references remain"
+            },
+            # Test 22
+            {
+                "command": "add try-except error handling to sandbox/calculator.py divide function",
+                "criteria": "try-except block present"
+            },
+            
+            # Category 4: Multi-Agent Workflows (Tests 23-27)
+            # Test 23
+            {
+                "command": "analyze sandbox/calculator.py then generate comprehensive tests for it",
+                "criteria": "Tests cover edge cases"
+            },
+            # Test 24
+            {
+                "command": "review sandbox/person.py for improvements, then apply them",
+                "criteria": "Code quality improved"
+            },
+            # Test 25
+            {
+                "command": "create a README.md for the sandbox/ directory describing all modules",
+                "criteria": "README lists all .py files"
+            },
+            # Test 26
+            {
+                "command": "find potential issues in sandbox/*.py files and fix them",
+                "criteria": "Issues identified and corrected"
+            },
+            # Test 27
+            {
+                "command": "analyze all files in sandbox/ and create a summary report",
+                "criteria": "Report covers all files"
+            },
+            
+            # Category 5: Advanced Features (Tests 28-30)
+            # Test 28
+            {
+                "command": "compare sandbox/calculator.py and sandbox/math_ops.py",
+                "criteria": "Identifies similarities and differences"
+            },
+            # Test 29
+            {
+                "command": "analyze imports across sandbox/ and show dependencies",
+                "criteria": "Shows dependency relationships"
+            },
+            # Test 30
+            {
+                "command": "create a complete todo app with: sandbox/todo.py (model), sandbox/todo_cli.py (CLI), sandbox/test_todo.py (tests)",
+                "criteria": "All files created, interconnected, functional"
+            },
         ]
         
-        # Execute tests
-        for i, test in enumerate(tests[:16], 1):  # Start with first 16 tests
+        # Execute all tests
+        for i, test in enumerate(tests, 1):
             result = await self.run_test(i, test["command"], test["criteria"])
             self.results.append(result)
             
