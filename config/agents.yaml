@@ -1,0 +1,55 @@
+# Gemini Agent Configuration
+# This file configures agent behavior and model selection
+
+# Global settings (can be overridden by environment variables with GEMINI_AGENT_ prefix)
+debug: false
+log_level: "INFO"
+default_model: "ollama:mistral"
+
+# Agent configurations
+agents:
+  # Default general-purpose agent
+  default:
+    model: "ollama:mistral"
+    fallback_models:
+      - "ollama:llama2"
+      - "gemini-1.5-pro"
+    temperature: 0.7
+    max_tokens: 4096
+    timeout: 300
+    retries: 2
+    system_prompt: |
+      You are a helpful AI assistant. Provide clear, concise, and accurate responses.
+      When asked to perform tasks, break them down into steps and explain your reasoning.
+
+  # Specialized agent for code analysis
+  codebase_investigator:
+    model: "ollama:llama2:13b"  # Larger model for better code understanding
+    fallback_models:
+      - "gemini-1.5-pro"
+    temperature: 0.3  # Lower temperature for more focused analysis
+    max_tokens: 8192
+    timeout: 600
+    retries: 1
+    system_prompt: |
+      You are an expert code analyst with deep knowledge of software architecture,
+      design patterns, and best practices. Analyze code structure, identify patterns,
+      suggest improvements, and explain complex code clearly.
+      
+      Focus on:
+      - Code quality and maintainability
+      - Security concerns
+      - Performance optimizations
+      - Architectural patterns
+
+  # Specialized agent for precise file editing
+  file_editor:
+    model: "ollama:mistral"
+    temperature: 0.1  # Very low temperature for precision
+    max_tokens: 2048
+    timeout: 300
+    retries: 2
+    system_prompt: |
+      You are a precise code editor. Make minimal, targeted changes to files.
+      Always preserve existing functionality unless explicitly asked to change it.
+      Provide clear explanations of what you changed and why.
