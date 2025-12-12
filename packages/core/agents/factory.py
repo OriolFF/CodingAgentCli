@@ -1,8 +1,8 @@
-"""Agent factory for creating agents from configuration."""
+"""Agent factory for creating PydanticAI agents with configuration."""
 
 from typing import Optional
 from pydantic_ai import Agent
-from ..config import Config, load_config_from_yaml
+from ..config import Config, get_config
 
 
 class AgentFactory:
@@ -13,28 +13,37 @@ class AgentFactory:
     """
 
     def __init__(self, config: Optional[Config] = None):
-        """Initialize the factory.
+        """Initialize the agent factory.
         
         Args:
-            config: Configuration object. If None, loads from default location.
+            config: Optional configuration. If not provided, uses get_config()
         """
-        self.config = config or load_config_from_yaml("config/agents.yaml")
-
-    def create_agent(self, name: str = "default") -> Agent:
-        """Create an agent from configuration.
+        self.config = config or get_config()
+    
+    def create_agent(
+        self,
+        agent_name: str = "default",
+        **overrides
+    ) -> Agent:
+        """Create a PydanticAI agent with specified configuration.
         
         Args:
-            name: Name of the agent configuration to use
+            agent_name: Name of the agent configuration to use
+            **overrides: Override specific configuration parameters
             
         Returns:
             Configured PydanticAI Agent instance
             
         Raises:
-            KeyError: If agent configuration not found
+            ValueError: If agent configuration not found
         """
-        agent_config = self.config.get_agent_config(name)
-        if agent_config is None:
-            raise KeyError(f"Agent configuration '{name}' not found")
+        # Get agent configuration
+        agent_config = self.config.get_agent_config(agent_name)
+        if not agent_config:
+            raise ValueError(
+                f"Agent '{agent_name}' not found in configuration. "
+                f"Available agents: {list(self.config.agents.keys())}"
+            )
 
         # Create agent with primary model
         # Note: Currently using text-only mode due to Ollama structured output issues
@@ -71,13 +80,20 @@ def get_agent_factory() -> AgentFactory:
     return _global_factory
 
 
-def create_agent(name: str = "default") -> Agent:
+def create_agent(
+    agent_name: str = "default",
+    config: Optional[Config] = None,
+    **overrides
+) -> Agent:
     """Convenience function to create an agent.
     
     Args:
-        name: Name of the agent configuration
+        agent_name: Name of agent configuration
+        config: Optional Config instance
+        **overrides: Override configuration parameters
         
     Returns:
-        Configured agent instance
+        Configured PydanticAI Agent
     """
-    return get_agent_factory().create_agent(name)
+    factory = AgentFactory(config=config)
+    return factory.create_agent(agent_name, **overrides)
