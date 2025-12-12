@@ -10,6 +10,11 @@ authors = [
 ]
 
 dependencies = [
+    # Core Framework
+    "pydantic-ai>=1.31.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    
     # Terminal UI
     "rich>=13.0.0",
     "click>=8.1.0",
@@ -17,9 +22,6 @@ dependencies = [
     # Async HTTP and I/O
     "httpx>=0.25.0",
     "aiofiles>=23.0.0",
-    
-    # Data validation
-    "pydantic>=2.0.0",
     
     # Multi-Provider Support
     "openai>=1.0.0",
@@ -30,6 +32,9 @@ dependencies = [
     
     # MCP Protocol
     "mcp>=0.1.0",
+    
+    # Configuration
+    "pyyaml>=6.0.0",
 ]
 
 [project.optional-dependencies]
