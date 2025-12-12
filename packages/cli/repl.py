@@ -41,6 +41,9 @@ class AgentREPL:
         self.active_agent = None
         self.history_file = Path.home() / ".pydantic_agent_history"
         
+        # Import file mention support
+        from .file_mentions import get_project_files
+        
         # Create completer with comprehensive suggestions
         from prompt_toolkit.completion import WordCompleter, PathCompleter, merge_completers
         
@@ -67,14 +70,19 @@ class AgentREPL:
             ".py", ".md", ".yaml", ".toml",
         ]
         
+        # Get project files for @ mentions
+        project_files = get_project_files()
+        # Prefix with @ for file mentions
+        file_mentions = [f"@{f}" for f in project_files]
+        
         # Combine completers
         word_completer = WordCompleter(
-            command_words + action_words + common_paths,
+            command_words + action_words + common_paths + file_mentions,
             ignore_case=True,
             sentence=True  # Allow multi-word completion
         )
         
-        # Path completer for file paths
+        # Path completer for file paths (including @ mentions)
         path_completer = PathCompleter(
             expanduser=True,
             only_directories=False,
@@ -138,6 +146,15 @@ Just type natural language commands:
 - `docs <target>` - Generate documentation
 - `refactor <file>` - Improve code quality
 
+## File Mentions with @
+
+Reference files directly with `@filename`:
+
+- `analyze @config.py` - Analyzes config.py (auto-loads content)
+- `compare @file1.py @file2.py` - Compare two files
+- `what does @delegation.py do?` - Asks about specific file
+- Type `@` and press Tab to see available files
+
 ## Examples
 
 ```
@@ -145,6 +162,8 @@ analyze packages/core/config/config.py
 generate comprehensive tests for tools module
 refactor delegation.py to improve readability
 create README for this project
+explain @repl.py and suggest improvements
+compare @config.py @loader.py
 ```
 
 The coordinator agent will automatically route your request to the appropriate specialist!
@@ -252,11 +271,25 @@ The coordinator agent will automatically route your request to the appropriate s
         """
         from rich.spinner import Spinner
         from rich.live import Live
+        from .file_mentions import FileMentionParser
+        
+        # Process @mentions
+        cleaned_command, file_context = FileMentionParser.process_mentions(command)
+        
+        # Show which files were referenced
+        mentions = FileMentionParser.extract_mentions(command)
+        if mentions:
+            self.console.print(f"[dim]📎 Referenced files: {', '.join(mentions)}[/dim]")
+        
+        # Combine command with file context
+        full_prompt = cleaned_command
+        if file_context:
+            full_prompt = f"{cleaned_command}\n\n{file_context}"
         
         # Show thinking indicator
         with Live(Spinner("dots", text="Processing..."), console=self.console):
             try:
-                result = await delegate_task(command)
+                result = await delegate_task(full_prompt)
                 
                 # Display result
                 self.display_result(result)
