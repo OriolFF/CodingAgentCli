@@ -39,7 +39,7 @@ async def test_shell_command_timeout():
     result = await tool.execute(command="sleep 10", timeout=1)
     
     assert result.success is False
-    assert "timeout" in result.error.lower()
+    assert "timed out" in result.error.lower()
 
 
 @pytest.mark.asyncio
@@ -88,7 +88,7 @@ async def test_fetch_url_timeout():
     )
     
     assert result.success is False
-    assert "timeout" in result.error.lower()
+    assert "timed out" in result.error.lower()
 
 
 # MemoryTool Tests

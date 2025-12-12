@@ -11,6 +11,13 @@ from .search import ListDirectoryTool, GlobSearchTool, GrepSearchTool
 from .shell import ShellExecutionTool
 from .web import FetchUrlTool
 from .memory import MemoryTool
+from .approval import (
+    ToolApprovalSystem,
+    ApprovalDecision,
+    get_approval_system,
+    tool_requires_approval,
+    TOOLS_REQUIRING_APPROVAL,
+)
 
 __all__ = [
     "BaseTool",
@@ -25,4 +32,9 @@ __all__ = [
     "ShellExecutionTool",
     "FetchUrlTool",
     "MemoryTool",
+    "ToolApprovalSystem",
+    "ApprovalDecision",
+    "get_approval_system",
+    "tool_requires_approval",
+    "TOOLS_REQUIRING_APPROVAL",
 ]
