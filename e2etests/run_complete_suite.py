@@ -1,4 +1,4 @@
-"""Complete E2E Test Suite - All 30 Scenarios
+"""Complete E2E Test Suite - All 31 Scenarios
 Hybrid file creation with code extraction and quality analysis.
 """
 
@@ -13,7 +13,7 @@ from packages.core.config import init_config
 from code_extractor import extract_and_create_files, verify_file_exists, analyze_code_quality
 
 class CompletE2ETestRunner:
-    """Execute all 30 E2E test scenarios."""
+    """Execute all 31 E2E test scenarios."""
     
     def __init__(self):
         self.sandbox = Path("../sandbox")
@@ -25,7 +25,7 @@ class CompletE2ETestRunner:
     async def run_test(self, num, command, criteria, category):
         """Run single test with file creation and analysis."""
         print(f"\n{'='*80}")
-        print(f"Test {num}/{30} ({category}): {command[:60]}...")
+        print(f"Test {num}/31 ({category}): {command[:60]}...")
         print(f"{'='*80}")
         
         try:
@@ -59,7 +59,7 @@ class CompletE2ETestRunner:
             return {"num": num, "category": category, "passed": False, "error": str(e)}
     
     async def run_all(self):
-        """Execute all 30 tests."""
+        """Execute all 31 tests."""
         tests = [
             # Category 1: Analysis (1-8)
             (1, "how many python files are in packages/core/agents?", "Count files", "analysis"),
@@ -80,6 +80,7 @@ class CompletE2ETestRunner:
             (14, "create sandbox/cli.py with click command that says hello", "Click CLI", "generation"),
             (15, "create sandbox/config.py with Pydantic Settings Config class", "Config", "generation"),
             (16, "create a complete modern landing page sandbox/landing.html with CSS: hero section, features section (3 cards), testimonials, CTA button, responsive design, gradient backgrounds", "Landing page", "generation"),
+            (31, "create sandbox/cv_landing.html - a nice landing web page following Material 3 design guidelines to serve as a CV for an Android engineer. Include experience at Google (Senior Android Engineer, 2020-2023, worked on Play Store), Meta (Android Developer, 2018-2020, Instagram team), and Spotify (Junior Android Developer, 2016-2018, mobile player). Add sections for: hero with name and title, work experience timeline, technical skills (Kotlin, Java, Jetpack Compose, MVVM, Coroutines), side projects, and contact. Use Material 3 colors, typography, and elevation patterns.", "Material 3 CV", "generation"),
             
             # Category 3: Manipulation (17-22)
             (17, "create sandbox/counter.py with Counter class and add reset method", "Counter", "manipulation"),
@@ -114,8 +115,8 @@ class CompletE2ETestRunner:
         print(f"\n{'='*80}")
         print(f"🎯 COMPLETE E2E TEST SUITE RESULTS")
         print(f"{'='*80}")
-        print(f"✅ Passed: {self.passed}/30 ({self.passed/30*100:.1f}%)")
-        print(f"❌ Failed: {self.failed}/30")
+        print(f"✅ Passed: {self.passed}/31 ({self.passed/31*100:.1f}%)")
+        print(f"❌ Failed: {self.failed}/31")
         
         # Category breakdown
         categories = {}
@@ -147,7 +148,7 @@ class CompletE2ETestRunner:
                     print(f"  ✅ {f} ({size} bytes)")
 
 async def main():
-    print("🚀 Complete E2E Test Suite - All 30 Scenarios")
+    print("🚀 Complete E2E Test Suite - All 31 Scenarios")
     print("=" * 80)
     
     init_config()

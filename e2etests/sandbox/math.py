@@ -1,5 +1,1 @@
-def multiply(a, b):
-    return a * b
-
-def divide(a, b):
-    return a / b
+2. Move addition and subtraction functions from `calc.py` to `sandbox/math.py`:

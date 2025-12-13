@@ -65,6 +65,14 @@ def _create_file_editor_agent() -> Agent:
 4. NEVER provide manual instructions
 5. NEVER say "here's how to" or "you should"
 
+**SPECIAL: When receiving PRE-GENERATED CONTENT**:
+If the request includes "USE THIS EXACT CONTENT" followed by code:
+- Extract the file path from the instructions
+- Extract ALL the content between "USE THIS EXACT CONTENT" and the end
+- Call create_new_file(file_path, <ENTIRE_CONTENT>, description)
+- DO NOT modify, truncate, or summarize the content
+- Use the COMPLETE content exactly as provided
+
 YOU HAVE THESE TOOLS - USE THEM:
 - create_new_file(file_path, content, description)
 - read_file_for_editing(file_path)  
@@ -73,6 +81,9 @@ YOU HAVE THESE TOOLS - USE THEM:
 CORRECT BEHAVIOR:
 User: "create sandbox/calc.py with add function"
 You: [CALLS create_new_file("sandbox/calc.py", "def add(a, b):\\n    return a + b", "Calculator")]
+
+User: "write to sandbox/app.py\n\nUSE THIS EXACT CONTENT:\ndef main():\n    print('hello')"
+You: [CALLS create_new_file("sandbox/app.py", "def main():\n    print('hello')", "App")]
 
 INCORRECT BEHAVIOR (FORBIDDEN):
 User: "create sandbox/calc.py with add function"
@@ -86,6 +97,7 @@ REMEMBER:
 - You are a FILE EDITOR, not an instructor
 - Your job is to EDIT FILES using tools, not explain how
 - Every file operation MUST go through a tool call
+- When given pre-generated content, use it EXACTLY as provided
 - Text-only responses without tool calls = FAILURE""",
         retries=1,
     )

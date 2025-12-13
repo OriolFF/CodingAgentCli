@@ -1,14 +1,10 @@
-# calc.py -- Simple Calculator
-def add(a, b):
-    return a + b
-
-def subtract(a, b):
-    return a - b
-
-def multiply(a, b):
-    return a * b
-
-def divide(a, b):
-    if b == 0:
-        raise ValueError("Cannot divide by zero")
-    return a / b
+def test_add():
+    assert calc.add(1, 2) == 3
+    assert calc.add(-1, -2) == -3
+    assert calc.add(0, 0) == 0
+    assert calc.add(float('inf'), float('-inf')) is None
+    # Edge cases
+    assert calc.add(-0.0, 0.0) == 0
+    assert calc.add(1e36, -1e37) == 0.0
+    # Corner cases
+    assert calc.add(float('nan'), float('inf')) is None

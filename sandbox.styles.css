@@ -1,0 +1,15 @@
+:root {
+  --md-primary: #6750A4;
+  --md-surface: #FFFBFE;
+}
+
+body {
+  background-color: var(--md-surface);
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+}
+
+h1 {
+  color: var(--md-primary);
+}

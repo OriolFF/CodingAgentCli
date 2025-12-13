@@ -60,29 +60,57 @@ def _create_coordinator_agent() -> Agent:
 **YOUR JOB**: Actually USE the tools to complete user requests. Don't explain, DO.
 
 Available tools (YOU MUST USE THESE):
+- generate_code(description, language, file_path): For creating NEW code files (handles generation AND writing)
 - analyze_codebase(request, focus): For code analysis, understanding structure
-- edit_files(instructions, file_context): For making code changes
+- edit_files(instructions, file_context): For modifying EXISTING files
 - search_code(query, file_pattern): For finding code/files
+
+**ROUTING LOGIC**:
+
+1. **Create NEW file with code** (HTML, Python, JS, etc.):
+   - Call generate_code(description, language, file_path) - THAT'S IT!
+   - The code_generator will generate AND write the file automatically
+   - Example: "create landing.html with Material 3"
+     → generate_code("landing page with Material 3", "html", "sandbox/landing.html")
+   - DO NOT call edit_files after generate_code (file is already written!)
+
+2. **Analyze or understand** existing code:
+   - Call analyze_codebase(request, focus)
+   - Example: "analyze config.py" → analyze_codebase("analyze config.py")
+
+3. **Modify or refactor** existing files:
+   - Call edit_files(instructions, file_context)
+   - Example: "add type hints to calc.py" → edit_files("add type hints to calc.py")
+
+4. **Search or find** code:
+   - Call search_code(query, file_pattern)
+   - Example: "find async functions" → search_code("async def")
 
 **RULES**:
 1. ALWAYS call the appropriate tool(s) to answer the question
 2. DO NOT explain what tools you would use - ACTUALLY USE THEM
-3. After using tools, present results in natural language
-4. Be direct and action-oriented
+3. For code generation, ONLY call generate_code() once - it writes the file automatically
+4. After using tools, present results in natural language
+5. Be direct and action-oriented
 
 **Examples of what to do**:
 
+User: "create app.py with FastAPI hello endpoint"
+✅ DO: generate_code("FastAPI app with hello endpoint", "python", "sandbox/app.py")
+
+User: "create landing.html with Material 3 design"
+✅ DO: generate_code("landing page with Material 3", "html", "sandbox/landing.html")
+
 User: "How many Python files are there?"
-✅ DO: Call search_code("*.py") then say "I found 42 Python files in the repository"
-❌ DON'T: "I would use search_code to find Python files..."
+✅ DO: search_code("*.py") then say "I found 42 Python files in the repository"
 
 User: "Analyze config.py"
-✅ DO: Call analyze_codebase("analyze config.py") then present the analysis
-❌ DON'T: "Let me explain how I would analyze this..."
+✅ DO: analyze_codebase("analyze config.py") then present the analysis
 
-User: "Find the longest file"
-✅ DO: Call search_code to find files, then report the result
-❌ DON'T: "Here's how to search for files..."
+User: "Modify calculator.py to add type hints"
+✅ DO: edit_files("add type hints to calculator.py")
+
+❌ DON'T: generate_code() THEN edit_files() - generate_code already writes the file!
 
 **Response Format** (natural language):
 Present tool results conversationally without metadata. Example:
@@ -101,6 +129,104 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
     # Import here to avoid circular imports
     from .codebase_investigator import get_codebase_agent
     from .file_editor import get_file_editor_agent
+    from .code_generator import get_code_generator_agent
+    
+    @agent.tool
+    async def generate_code(
+        ctx: RunContext[None],
+        description: str,
+        language: str = "python",
+        file_path: str = ""
+    ) -> str:
+        """Generate code and write it to a file.
+        
+        The code_generator will try to generate the code AND write it to the file using tools.
+        If tools aren't called (model explains instead), we fall back to manual file writing.
+        
+        Args:
+            ctx: Runtime context
+            description: What code to generate
+            language: Programming language (python, html, javascript, css, etc.)
+            file_path: Where to save the file (e.g., "sandbox/app.py")
+            
+        Returns:
+            Confirmation message
+        """
+        logger.info(f"Delegating to code generator: {description} ({language}) -> {file_path}")
+        
+        code_gen_agent = get_code_generator_agent()
+        
+        # Construct prompt that includes file creation
+        prompt = f"Create {file_path} with {language} code: {description}"
+        
+        try:
+            result = await code_gen_agent.run(prompt)
+            
+            # Check if tools were called
+            tool_called = False
+            if hasattr(result, 'all_messages'):
+                try:
+                    messages = result.all_messages()
+                    for msg in messages:
+                        if hasattr(msg, 'kind') and msg.kind == 'tool-call':
+                            tool_called = True
+                            logger.info(f"✅ Code generator used tools to create {file_path}")
+                            break
+                except Exception as e:
+                    logger.debug(f"Could not inspect messages: {e}")
+            
+            output = result.output if hasattr(result, 'output') else str(result.data)
+            
+            if tool_called:
+                # File was created by the tool
+                logger.info(f"Code generation completed for {file_path} via TOOLS")
+                return output
+            else:
+                # FALLBACK: Tool wasn't called, extract code and write manually
+                logger.warning(f"⚠️ Code generator didn't use tools - triggering FALLBACK for {file_path}")
+                
+                # Simple code extraction
+                code_content = output.strip()
+                
+                # If response is JSON (tool call syntax), extract the content field
+                if code_content.startswith('{'):
+                    import json
+                    try:
+                        json_obj = json.loads(code_content)
+                        if 'arguments' in json_obj and 'content' in json_obj['arguments']:
+                            code_content = json_obj['arguments']['content']
+                            logger.info(f"Extracted code from JSON content field")
+                    except (json.JSONDecodeError, KeyError):
+                        pass  # Not valid JSON, continue with other extraction
+                
+                # Extract from markdown code blocks if present
+                import re
+                code_block_pattern = r'```(?:[a-z]+)?\s*\n?(.*?)```'
+                match = re.search(code_block_pattern, code_content, re.DOTALL)
+                
+                if match:
+                    code_content = match.group(1).strip()
+                    logger.info(f"Extracted code from markdown block")
+                
+                if not code_content or len(code_content) < 10:
+                    logger.error(f"❌ No valid code extracted (got {len(code_content)} chars)")
+                    return f"Failed to extract code from response"
+                
+                # Write the code
+                from ..tools.file_operations import WriteFileTool
+                write_tool = WriteFileTool()
+                
+                try:
+                    await write_tool.execute(file_path, code_content)
+                    logger.info(f"✅ FALLBACK: Successfully wrote {file_path} ({len(code_content)} bytes)")
+                    return f"Created {file_path} using fallback ({len(code_content)} characters)"
+                except Exception as e:
+                    logger.error(f"❌ FALLBACK failed to write {file_path}: {e}")
+                    return f"Failed to create {file_path}: {str(e)}"
+                    
+        except Exception as e:
+            logger.error(f"Code generation failed: {e}")
+            return f"Generation failed: {str(e)}"
     
     @agent.tool
     async def analyze_codebase(
@@ -145,31 +271,39 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
     async def edit_files(
         ctx: RunContext[None],
         instructions: str,
-        file_context: Optional[str] = None
+        file_context: Optional[str] = None,
+        content: Optional[str] = None
     ) -> str:
-        """Make precise changes to files.
+        """Make precise changes to files or write pre-generated content.
         
         Use this tool when the user wants to:
-        - Modify existing code
+        - Write pre-generated code to a file (when content is provided)
+        - Modify existing code (when content is NOT provided)
         - Update configuration
         - Refactor code
         - Fix issues
         
         Args:
             ctx: Runtime context
-            instructions: What changes to make
+            instructions: What changes to make or file path to write to
             file_context: Optional context about which files
+            content: Optional pre-generated content to write (from generate_code)
             
         Returns:
             Edit results
         """
-        logger.info(f"Delegating to file editor: {instructions}")
+        if content:
+            logger.info(f"Delegating to file editor with pre-generated content ({len(content)} chars): {instructions}")
+        else:
+            logger.info(f"Delegating to file editor: {instructions}")
         
         file_editor_agent = get_file_editor_agent()
         
         prompt = f"Make these changes: {instructions}"
         if file_context:
             prompt += f"\nContext: {file_context}"
+        if content:
+            prompt += f"\n\nUSE THIS EXACT CONTENT (do not modify):\n{content}"
         
         try:
             # Force tool usage with tool_choice=required

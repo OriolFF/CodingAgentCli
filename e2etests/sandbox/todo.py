@@ -1,29 +1,16 @@
-import os
-from typing import List
+class Todo:
+        def __init__(self, tasks=None):
+            self.tasks = list(tasks or [])
 
-DATA_FILE = "todos.txt"  # Data storage file
+        def add_task(self, task):
+            self.tasks.append(task)
 
-def load_todos() -> List[str]:
-    if not os.path.isfile(DATA_FILE):
-        return []
+        def view_tasks(self):
+            for index, task in enumerate(self.tasks, 1):
+                print(f"{index}. {task}")
 
-    with open(DATA_FILE, "r") as f:
-        todos = [line.strip("\n") for line in f.readlines()]
-    return todos
-
-def save_todos(todos: List[str]):
-    with open(DATA_FILE, "w") as f:
-        for todo in todos:
-            f.write(f"{todo}\n")
-
-def add_todo(todo: str) -> None:
-    todos = load_todos()
-    todos.append(todo)
-    save_todos(todos)
-
-def remove_todo(index: int) -> None:
-    todos = load_todos()
-    if len(todos) <= index:
-        return
-    del todos[index]
-    save_todos(todos)
+        def delete_task(self, task_index):
+            if 0 < task_index <= len(self.tasks):
+                del self.tasks[task_index - 1]
+            else:
+                print("Invalid index")

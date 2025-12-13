@@ -97,6 +97,9 @@ class Config(BaseSettings):
     refactoring_model: Optional[str] = Field(default=None)
     refactoring_temperature: Optional[float] = Field(default=None)
     
+    code_generator_model: Optional[str] = Field(default=None)
+    code_generator_temperature: Optional[float] = Field(default=None)
+    
     # Agent configurations
     agents: dict[str, AgentConfigSpec] = Field(
         default_factory=dict,
@@ -112,6 +115,7 @@ class Config(BaseSettings):
             "testing": self.testing_model,
             "documentation": self.documentation_model,
             "refactoring": self.refactoring_model,
+            "code_generator": self.code_generator_model,
         }
         return model_map.get(agent_type) or self.default_model
     
@@ -124,6 +128,7 @@ class Config(BaseSettings):
             "testing": self.testing_temperature,
             "documentation": self.documentation_temperature,
             "refactoring": self.refactoring_temperature,
+            "code_generator": self.code_generator_temperature,
         }
         temp = temp_map.get(agent_type)
         return temp if temp is not None else self.default_temperature

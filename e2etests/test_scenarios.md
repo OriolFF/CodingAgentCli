@@ -11,7 +11,7 @@
 ## Test Categories
 
 ### Category 1: Code Analysis (Tests 1-8)
-### Category 2: Code Generation (Tests 9-16)
+### Category 2: Code Generation (Tests 9-16, 31)
 ### Category 3: File Manipulation (Tests 17-22)
 ### Category 4: Multi-Agent Workflows (Tests 23-27)
 ### Category 5: Advanced Features (Tests 28-30)
@@ -105,6 +105,16 @@
 **Command**: `generate sandbox/hello_cli.py with a click-based CLI that has a hello command`  
 **Expected**: Click CLI with hello command  
 **Success Criteria**: Imports click, has @click.command
+
+#### Test 31: Material 3 CV Landing Page
+**Command**: `create sandbox/cv_landing.html - a nice landing web page following Material 3 design guidelines to serve as a CV for an Android engineer. Include experience at Google (Senior Android Engineer, 2020-2023, worked on Play Store), Meta (Android Developer, 2018-2020, Instagram team), and Spotify (Junior Android Developer, 2016-2018, mobile player). Add sections for: hero with name and title, work experience timeline, technical skills (Kotlin, Java, Jetpack Compose, MVVM, Coroutines), side projects, and contact. Use Material 3 colors, typography, and elevation patterns.`  
+**Expected**: Complete HTML file with embedded CSS following Material 3 guidelines  
+**Success Criteria**: 
+- Uses Material 3 color palette and design tokens
+- Has hero section, work experience timeline, skills section
+- Includes all three companies (Google, Meta, Spotify) with correct details
+- Properly structured HTML5 with semantic elements
+- Responsive design with Material 3 elevation/shadows
 
 ---
 
@@ -215,8 +225,8 @@ For each test:
 
 ## Success Metrics
 
-- **Target**: 100% pass rate (30/30)
-- **Minimum Acceptable**: 90% (27/30)
+- **Target**: 100% pass rate (31/31)
+- **Minimum Acceptable**: 90% (28/31)
 - **Key Areas**: 
   - Code generation accuracy
   - File manipulation correctness  
