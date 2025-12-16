@@ -188,19 +188,40 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
                 # Simple code extraction
                 code_content = output.strip()
                 
-                # If response is JSON (tool call syntax), extract the content field
-                if code_content.startswith('{'):
-                    import json
+                # Pattern 1: Extract from function-call-like format
+                # Example: create_new_file({ "file_path": "...", "content": "...", ... })
+                import re
+                import json
+                
+                func_call_pattern = r'create_new_file\s*\(\s*(\{.*?\})\s*\)'
+                func_match = re.search(func_call_pattern, code_content, re.DOTALL)
+                
+                if func_match:
+                    try:
+                        json_obj = json.loads(func_match.group(1))
+                        if 'content' in json_obj:
+                            code_content = json_obj['content']
+                            logger.info(f"Extracted code from function-call format")
+                        elif 'arguments' in json_obj and 'content' in json_obj['arguments']:
+                            code_content = json_obj['arguments']['content']
+                            logger.info(f"Extracted code from nested arguments")
+                    except (json.JSONDecodeError, KeyError) as e:
+                        logger.debug(f"Failed to parse function call JSON: {e}")
+                
+                # Pattern 2: Direct JSON object (fallback from previous implementation)
+                elif code_content.startswith('{'):
                     try:
                         json_obj = json.loads(code_content)
                         if 'arguments' in json_obj and 'content' in json_obj['arguments']:
                             code_content = json_obj['arguments']['content']
+                            logger.info(f"Extracted code from JSON arguments field")
+                        elif 'content' in json_obj:
+                            code_content = json_obj['content']
                             logger.info(f"Extracted code from JSON content field")
-                    except (json.JSONDecodeError, KeyError):
-                        pass  # Not valid JSON, continue with other extraction
+                    except (json.JSONDecodeError, KeyError) as e:
+                        logger.debug(f"Failed to parse JSON: {e}")
                 
-                # Extract from markdown code blocks if present
-                import re
+                # Pattern 3: Markdown code blocks
                 code_block_pattern = r'```(?:[a-z]+)?\s*\n?(.*?)```'
                 match = re.search(code_block_pattern, code_content, re.DOTALL)
                 

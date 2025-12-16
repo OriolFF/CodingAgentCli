@@ -65,10 +65,15 @@ class Config(BaseSettings):
     ollama_base_url: str = Field(default="http://localhost:11434/v1")
     openai_api_key: Optional[str] = Field(default=None)
     
-    # Default model settings
+    # OpenRouter settings (OpenAI-compatible API)
+    openrouter_api_key: Optional[str] = Field(default=None)
+    openrouter_base_url: str = Field(default="https://openrouter.ai/api/v1")
+    
+    
+    # Default model settings (REQUIRED - no fallback)
     default_model: str = Field(
-        default="ollama:mistral",
-        description="Default model to use"
+        default=...,  # Required field - must be set in .env
+        description="Default model to use (e.g., 'ollama:llama3.1:8b-instruct-q8_0')"
     )
     default_temperature: float = Field(
         default=0.7,
@@ -107,17 +112,59 @@ class Config(BaseSettings):
     )
     
     def get_agent_model(self, agent_type: str) -> str:
-        """Get model for specific agent type, falling back to default."""
+        """Get the model for a specific agent type.
+        
+        Args:
+            agent_type: Type of agent (e.g., 'coordinator', 'file_editor', 'code_generator')
+            
+        Returns:
+            Model string
+            
+        Raises:
+            ValueError: If agent model is not configured
+        """
+        # Map agent types to their config attributes
         model_map = {
             "coordinator": self.coordinator_model,
-            "codebase": self.codebase_model,
             "file_editor": self.file_editor_model,
+            "codebase": self.codebase_model,
             "testing": self.testing_model,
             "documentation": self.documentation_model,
             "refactoring": self.refactoring_model,
             "code_generator": self.code_generator_model,
         }
-        return model_map.get(agent_type) or self.default_model
+        
+        model = model_map.get(agent_type)
+        
+        if not model:
+            # Provide helpful error with exact .env variable name
+            env_var_map = {
+                "coordinator": "COORDINATOR_MODEL",
+                "file_editor": "FILE_EDITOR_MODEL",
+                "codebase": "CODEBASE_MODEL",
+                "testing": "TESTING_MODEL",
+                "documentation": "DOCUMENTATION_MODEL",
+                "refactoring": "REFACTORING_MODEL",
+                "code_generator": "CODE_GENERATOR_MODEL",
+            }
+            
+            env_var = env_var_map.get(agent_type, f"{agent_type.upper()}_MODEL")
+            
+            raise ValueError(
+                f"\n❌ Model not configured for agent: {agent_type}\n\n"
+                f"Solution:\n"
+                f"1. Add {env_var} to your .env file:\n"
+                f"   {env_var}=ollama:llama3.1:8b-instruct-q8_0\n\n"
+                f"2. Or use the default model by not specifying a custom one.\n\n"
+                f"Available models in .env:\n"
+                f"  - DEFAULT_MODEL (general fallback)\n"
+                f"  - COORDINATOR_MODEL (task routing)\n"
+                f"  - FILE_EDITOR_MODEL (file operations)\n"
+                f"  - CODE_GENERATOR_MODEL (code generation)\n"
+                f"  - CODEBASE_MODEL (code analysis)\n"
+            )
+        
+        return model
     
     def get_agent_temperature(self, agent_type: str) -> float:
         """Get temperature for specific agent type, falling back to default."""
@@ -174,8 +221,25 @@ class Config(BaseSettings):
         """Initialize after model creation."""
         # Set environment variables for PydanticAI providers
         os.environ.setdefault("OLLAMA_BASE_URL", self.ollama_base_url)
+        
         if self.openai_api_key:
             os.environ.setdefault("OPENAI_API_KEY", self.openai_api_key)
+        
+        # OpenRouter uses OpenAI-compatible API
+        if self.openrouter_api_key:
+            os.environ.setdefault("OPENAI_API_KEY", self.openrouter_api_key)
+            os.environ.setdefault("OPENAI_BASE_URL", self.openrouter_base_url)
+        
+        # Validate that default_model is set
+        if not self.default_model or self.default_model == "...":
+            raise ValueError(
+                "\n❌ DEFAULT_MODEL is required but not set!\n\n"
+                "Solution:\n"
+                "1. Add DEFAULT_MODEL to your .env file:\n"
+                "   DEFAULT_MODEL=ollama:llama3.1:8b-instruct-q8_0\n\n"
+                "2. Or export it as an environment variable:\n"
+                "   export DEFAULT_MODEL=ollama:llama3.1:8b-instruct-q8_0\n"
+            )
         
         # Add default agent if none configured
         if not self.agents:

@@ -12,13 +12,20 @@ if "OLLAMA_BASE_URL" not in os.environ:
     os.environ["OLLAMA_BASE_URL"] = "http://localhost:11434/v1"
 
 # Create first PydanticAI agent with Ollama
-# Using mistral with text output (Ollama has issues with structured JSON via OpenAI API)
-# NOTE: Structured outputs (Pydantic models) don't work reliably with Ollama
-# through the OpenAI-compatible API. See docs/model_compatibility.md for details.
-# Future implementation will add proper structured output support.
+# Requires DEFAULT_MODEL to be set in .env - no fallback
+default_model = os.getenv("DEFAULT_MODEL")
+if not default_model:
+    raise ValueError(
+        "\n❌ DEFAULT_MODEL environment variable is required but not set!\n\n"
+        "Solution:\n"
+        "1. Add DEFAULT_MODEL to your .env file:\n"
+        "   DEFAULT_MODEL=ollama:llama3.1:8b-instruct-q8_0\n\n"
+        "2. Or export it:\n"
+        "   export DEFAULT_MODEL=ollama:llama3.1:8b-instruct-q8_0\n"
+    )
+
 simple_agent = Agent(
-    "ollama:mistral",
-    # No output_type for now - just text responses
+    default_model,
     system_prompt="You are a helpful assistant. Provide concise, accurate answers.",
     retries=2,
 )
