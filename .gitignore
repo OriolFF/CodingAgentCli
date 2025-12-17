@@ -54,8 +54,8 @@ data/
 logs/
 
 # Environment
-# env
-# .env.local
+.env
+.env.local
 
 # Temporary files
 tmp/
