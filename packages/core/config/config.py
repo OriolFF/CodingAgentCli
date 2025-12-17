@@ -69,6 +69,9 @@ class Config(BaseSettings):
     openrouter_api_key: Optional[str] = Field(default=None)
     openrouter_base_url: str = Field(default="https://openrouter.ai/api/v1")
     
+    # Gemini settings (Google AI)
+    gemini_api_key: Optional[str] = Field(default=None)
+    
     
     # Default model settings (REQUIRED - no fallback)
     default_model: str = Field(
@@ -103,7 +106,11 @@ class Config(BaseSettings):
     refactoring_temperature: Optional[float] = Field(default=None)
     
     code_generator_model: Optional[str] = Field(default=None)
-    code_generator_temperature: Optional[float] = Field(default=None)
+    code_generator_temperature: float = Field(default=0.1)
+    
+    # Code extractor - intelligent code extraction from LLM responses
+    code_extractor_model: Optional[str] = Field(default=None)
+    code_extractor_temperature: float = Field(default=0.0)
     
     # Agent configurations
     agents: dict[str, AgentConfigSpec] = Field(
@@ -132,6 +139,7 @@ class Config(BaseSettings):
             "documentation": self.documentation_model,
             "refactoring": self.refactoring_model,
             "code_generator": self.code_generator_model,
+            "code_extractor": self.code_extractor_model,
         }
         
         model = model_map.get(agent_type)
@@ -229,6 +237,10 @@ class Config(BaseSettings):
         if self.openrouter_api_key:
             os.environ.setdefault("OPENAI_API_KEY", self.openrouter_api_key)
             os.environ.setdefault("OPENAI_BASE_URL", self.openrouter_base_url)
+        
+        # Gemini API
+        if self.gemini_api_key:
+            os.environ.setdefault("GEMINI_API_KEY", self.gemini_api_key)
         
         # Validate that default_model is set
         if not self.default_model or self.default_model == "...":

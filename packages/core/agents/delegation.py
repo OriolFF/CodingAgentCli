@@ -182,68 +182,57 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
                 logger.info(f"Code generation completed for {file_path} via TOOLS")
                 return output
             else:
-                # FALLBACK: Tool wasn't called, extract code and write manually
-                logger.warning(f"⚠️ Code generator didn't use tools - triggering FALLBACK for {file_path}")
+                # FALLBACK: Tool wasn't called, use code extractor agent
+                logger.warning(f"⚠️ Code generator didn't use tools - triggering CODE EXTRACTOR for {file_path}")
+                logger.info(f"🔍 CODE EXTRACTOR invoked to parse response")
                 
-                # Simple code extraction
-                code_content = output.strip()
+                # Log the FULL OUTPUT from the model
+                print(f"\n{'='*80}")
+                print(f"📋 FULL MODEL RESPONSE (length: {len(output)} chars)")
+                print(f"{'='*80}")
+                print(output[:2000])  # First 2000 chars
+                print(f"\n{'='*80}")
+                print(f"📋 END OF MODEL RESPONSE")
+                print(f"{'='*80}\n")
                 
-                # Pattern 1: Extract from function-call-like format
-                # Example: create_new_file({ "file_path": "...", "content": "...", ... })
-                import re
-                import json
-                
-                func_call_pattern = r'create_new_file\s*\(\s*(\{.*?\})\s*\)'
-                func_match = re.search(func_call_pattern, code_content, re.DOTALL)
-                
-                if func_match:
-                    try:
-                        json_obj = json.loads(func_match.group(1))
-                        if 'content' in json_obj:
-                            code_content = json_obj['content']
-                            logger.info(f"Extracted code from function-call format")
-                        elif 'arguments' in json_obj and 'content' in json_obj['arguments']:
-                            code_content = json_obj['arguments']['content']
-                            logger.info(f"Extracted code from nested arguments")
-                    except (json.JSONDecodeError, KeyError) as e:
-                        logger.debug(f"Failed to parse function call JSON: {e}")
-                
-                # Pattern 2: Direct JSON object (fallback from previous implementation)
-                elif code_content.startswith('{'):
-                    try:
-                        json_obj = json.loads(code_content)
-                        if 'arguments' in json_obj and 'content' in json_obj['arguments']:
-                            code_content = json_obj['arguments']['content']
-                            logger.info(f"Extracted code from JSON arguments field")
-                        elif 'content' in json_obj:
-                            code_content = json_obj['content']
-                            logger.info(f"Extracted code from JSON content field")
-                    except (json.JSONDecodeError, KeyError) as e:
-                        logger.debug(f"Failed to parse JSON: {e}")
-                
-                # Pattern 3: Markdown code blocks
-                code_block_pattern = r'```(?:[a-z]+)?\s*\n?(.*?)```'
-                match = re.search(code_block_pattern, code_content, re.DOTALL)
-                
-                if match:
-                    code_content = match.group(1).strip()
-                    logger.info(f"Extracted code from markdown block")
-                
-                if not code_content or len(code_content) < 10:
-                    logger.error(f"❌ No valid code extracted (got {len(code_content)} chars)")
-                    return f"Failed to extract code from response"
-                
-                # Write the code
+                # Use intelligent code extractor micro-agent
+                from .code_extractor import extract_code_from_response
                 from ..tools.file_operations import WriteFileTool
-                write_tool = WriteFileTool()
                 
                 try:
-                    await write_tool.execute(file_path, code_content)
-                    logger.info(f"✅ FALLBACK: Successfully wrote {file_path} ({len(code_content)} bytes)")
-                    return f"Created {file_path} using fallback ({len(code_content)} characters)"
+                    # Extract code using AI-powered agent
+                    extraction_result = await extract_code_from_response(output, file_path)
+                    
+                    logger.info(f"📊 Code extractor found {extraction_result.num_files} file(s)")
+                    
+                    # Create each extracted file
+                    write_tool = WriteFileTool()
+                    created_files = []
+                    
+                    for extracted_file in extraction_result.files:
+                        try:
+                            await write_tool.execute(
+                                extracted_file.file_path,
+                                extracted_file.content
+                            )
+                            created_files.append(extracted_file.file_path)
+                            logger.info(
+                                f"✅ Created {extracted_file.file_path} "
+                                f"({len(extracted_file.content)} bytes, {extracted_file.file_type})"
+                            )
+                        except Exception as e:
+                            logger.error(f"❌ Failed to write {extracted_file.file_path}: {e}")
+                    
+                    if created_files:
+                        files_summary = ", ".join(created_files)
+                        return f"Created {len(created_files)} file(s): {files_summary}"
+                    else:
+                        return f"Failed to create any files from extraction"
+                        
                 except Exception as e:
-                    logger.error(f"❌ FALLBACK failed to write {file_path}: {e}")
-                    return f"Failed to create {file_path}: {str(e)}"
+                    logger.error(f"❌ Code extraction failed: {e}")
+                    return f"Code extraction failed: {str(e)}"
+
                     
         except Exception as e:
             logger.error(f"Code generation failed: {e}")
@@ -381,18 +370,15 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
     return agent
 
 
-async def delegate_task(
-    request: str,
-    context: Optional[str] = None
-) -> DelegationResult:
-    """Delegate a task to appropriate specialized agents.
+async def delegate_task(user_request: str) -> DelegationResult:
+    """Main entry point for task delegation."""
+    """Main entry point for task delegation.
     
     This is the main entry point for task delegation. The coordinator
     will analyze the request and route it to the right agents.
     
     Args:
-        request: User's request
-        context: Optional additional context
+        user_request: User's request
         
     Returns:
         DelegationResult with outcomes
@@ -404,15 +390,18 @@ async def delegate_task(
         >>> print(result.task_summary)
         "Analyzed configuration, then updated default_temperature to 0.5"
     """
+    print(f"🔵 ENTERED delegate_task")
+    logger.info(f"🎯 COORDINATOR invoked with request: {user_request[:100]}...")
+    
+    print(f"🔵 Getting coordinator agent...")
     coordinator = get_coordinator_agent()
+    print(f"✅ Got coordinator agent")
     
-    prompt = request
-    if context:
-        prompt += f"\n\nContext: {context}"
+    logger.info(f"Delegating task: {user_request}")
     
-    logger.info(f"Delegating task: {request}")
-    
-    result = await coordinator.run(prompt)
+    print(f"🔵 Running coordinator with request...")
+    result = await coordinator.run(user_request)
+    print(f"✅ Coordinator returned")
     
     # Parse text output into DelegationResult
     output = result.output if hasattr(result, 'output') else str(result.data)
