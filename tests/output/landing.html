@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Modern Landing Page</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+<style>
+:root {
+  --topbar-text-color: #ffffff;
+  --primary-color: #1976d2;
+  --secondary-color: #f50b3c;
+  --text-grey: #e8eaed;
+}
+
+body {
+  margin: 0;
+  font-family: "Roboto", sans-serif;
+}
+
+.topbar {
+  position: fixed;
+  z-index: 5;
+  width: 100%;
+  justify-content: space-between;
+  padding: 20px;
+  background-color: rgba(4, 39, 86, 0.7);
+  transition: all 0.3s ease-in-out;
+}
+
+.topbar.active {
+  transform: translateY(-100%);
+}
+
+.logo {
+  font-size: 1.5rem !important;
+  text-decoration: none;
+  color: var(--topbar-text-color) !important;
+  background-image: -webkit-linear-gradient(92deg, #1976d2 -13%, #f50b3c 100%);
+}
+
+.navbar-links a {
+  padding-left: 40px;
+  text-decoration: none;
+  color: var(--topbar-text-color);
+  font-size: 1.2rem;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease-in-out;
+}
+
+@media (max-width: 768px) {
+  .navbar-links a {
+    padding-left: 30px;
+    width: 100%;
+  }
+}
+
+.topbar-toggleBtn {
+  display: none !important;
+}
+
+h1 {
+  margin: 0;
+  font-size: 52px;
+  color: #2c3e50;
+}
+
+.hero-content h4, .hero-content p {
+  text-align: center;
+  max-width: 800px;
+}
+
+.cta-button {
+  padding: 20px 50px;
+  border-radius: 6px;
+  font-size: 1.1rem;
+  margin: auto;
+  display: block;
+  width: fit-content;
+  background-image: linear-gradient(315deg, #f50b3c 0%, #f2e9ec 74%);
+}
+
+.animation {
+  animation-name: fadeInUp;
+  animation-duration: 2s;
+  animation-iteration-count: infinite;
+}
+
+/* Animation key frames */
+@keyframes fadeInUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(-5px) translateZ(0);
+       opacity: .9; }
+}
+</style>
+</head>
+
+<body>
+<nav class="topbar">
+  <div class="logo">Brand<span>Logo</span></div>
+  

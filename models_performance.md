@@ -22,12 +22,14 @@ This document summarizes the performance of different LLM models tested for code
 
 | Model | Provider | Status | Issue | Output | Notes |
 |-------|----------|--------|-------|--------|-------|
+| `cogito:14b` | Ollama (Local) | ⚠️ **Unreliable** | Inconsistent behavior + API errors | Test 1: 3 broken files; Test 2: Refused to generate | Model behavior non-deterministic, sometimes generates broken code, sometimes refuses entirely |
 | `deepseek/deepseek-chat` | OpenRouter | ⚠️ Incomplete | Lazy generation | 1,232 bytes with placeholders | Generated skeleton with `// ... rest of script...` comments |
 
 ### ❌ Failed Models
 
 | Model | Provider | Error Code | Error Message | Cause |
 |-------|----------|------------|---------------|-------|
+| `codellama:13b` | Ollama (Local) | 400 | Does not support tools | Model architecture doesn't support tool calling required by agent framework |
 | `qwen/qwen3-coder:free` | OpenRouter (Venice/Chutes) | 429 | Rate limited upstream | Free tier quota exhausted, need to add own API key |
 | `kwaipilot/kat-coder-pro:free` | OpenRouter (Novita) | 400 | Invalid request error | Provider incompatibility or model unavailable |
 | `gemini-1.5-flash` | Google Gemini | 404 | Model not found | Not available in v1beta API |
@@ -67,6 +69,67 @@ Use Case: Coordinator & Code Extractor
 Speed: ~5 seconds
 Cost: FREE (local)
 Notes: Excellent for instruction following and code extraction
+```
+
+#### codellama:13b
+```
+Format: ollama:codellama:13b
+Status: ❌ NO TOOL SUPPORT
+Error: 400 - Does not support tools
+Message: "registry.ollama.ai/library/codellama:13b does not support tools"
+Test Date: December 17, 2024
+Output Folder: tests/output/codellama_13b/ (created but empty)
+Notes: 
+  - Model initialized successfully
+  - Output directory created correctly
+  - API rejected request at generation phase
+  - Fallback system could not activate (API error before response)
+  - CodeLlama architecture doesn't support function/tool calling
+Recommendation: Use qwen2.5-coder:14b for local code generation instead
+```
+
+#### cogito:14b ⚠️ UNRELIABLE
+```
+Format: ollama:cogito:14b
+Status: ⚠️ UNRELIABLE - Inconsistent Behavior
+Test Dates: December 17, 2024 (2 separate tests)
+
+TEST 1 Results (First Run):
+  Output Folder: tests/output/cogito_14b/
+  Files Generated: 3 files
+    - tetris.html: 378 bytes (incomplete - only HTML structure, missing body)
+    - tetris.css: 0 bytes (empty file)
+    - tetris.js: 5061 bytes (incomplete with syntax errors)
+  Issues:
+    - Model didn't use tools (fallback extraction activated)
+    - Code extractor JSON parsing failed
+    - Fallback created files but content incomplete/broken
+  Quality Checks: 2/7 passed
+  Time: ~2-3 minutes
+
+TEST 2 Results (Second Run - After implementing validation):
+  Output: Model REFUSED to generate code
+  Response: "I apologize for the inconvenience. It appears that I'm a large 
+            language model, I am not capable of generating code directly..."
+  Files Generated: 0 (empty directory)
+  API Errors: Multiple "invalid message content type: <nil>" errors
+  Behavior: Model apologized instead of generating code
+
+Reliability Issues:
+  ⚠️ Non-deterministic behavior (generates vs refuses randomly)
+  ⚠️ API incompatibility with tool calling protocol  
+  ⚠️ When it does generate, code is incomplete/broken
+  ⚠️ Sometimes refuses task claiming inability
+  ⚠️ Inconsistent across runs with same prompt
+
+Speed: Varies (2-3 min when generates, ~30s when refuses)
+Cost: FREE (local)
+Recommendation: ❌ NOT RECOMMENDED - Use qwen2.5-coder:14b for reliable results
+Notes:
+  - Cogito:14b shows unstable behavior unsuitable for production
+  - Model architecture may not fully support function/tool calling
+  - Unpredictable whether it will generate code or refuse
+  - When it generates, output requires significant refactoring
 ```
 
 ### OpenRouter Models

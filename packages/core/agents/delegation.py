@@ -152,90 +152,172 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
         Returns:
             Confirmation message
         """
-        logger.info(f"Delegating to code generator: {description} ({language}) -> {file_path}")
+        print(f"\n{'='*80}")
+        print(f"🎯 COORDINATOR → CODE_GENERATOR")
+        print(f"{'='*80}")
+        print(f"Task: Generate {language} code")
+        print(f"Description: {description}")
+        print(f"Target file: {file_path}")
+        print(f"{'='*80}\n")
+        logger.info(f"🎯 COORDINATOR delegating to CODE_GENERATOR: {description} ({language}) -> {file_path}")
         
         code_gen_agent = get_code_generator_agent()
         
-        # Construct prompt that includes file creation
+        # Construct prompt
         prompt = f"Create {file_path} with {language} code: {description}"
         
         try:
+            print(f"🔄 CODE_GENERATOR agent started...")
             result = await code_gen_agent.run(prompt)
-            
-            # Check if tools were called
-            tool_called = False
-            if hasattr(result, 'all_messages'):
-                try:
-                    messages = result.all_messages()
-                    for msg in messages:
-                        if hasattr(msg, 'kind') and msg.kind == 'tool-call':
-                            tool_called = True
-                            logger.info(f"✅ Code generator used tools to create {file_path}")
-                            break
-                except Exception as e:
-                    logger.debug(f"Could not inspect messages: {e}")
-            
             output = result.output if hasattr(result, 'output') else str(result.data)
+            print(f"✅ CODE_GENERATOR agent finished (response length: {len(output)} chars)")
             
-            if tool_called:
-                # File was created by the tool
-                logger.info(f"Code generation completed for {file_path} via TOOLS")
-                return output
-            else:
-                # FALLBACK: Tool wasn't called, use code extractor agent
-                logger.warning(f"⚠️ Code generator didn't use tools - triggering CODE EXTRACTOR for {file_path}")
-                logger.info(f"🔍 CODE EXTRACTOR invoked to parse response")
+            # Code generator is TEXT-ONLY now (no tools), always use code extractor
+            logger.info(f"🔍 CODE EXTRACTOR invoked to parse response")
+            
+            # Log the FULL OUTPUT from the model
+            print(f"\n{'='*80}")
+            print(f"📋 CODE GENERATOR RESPONSE (length: {len(output)} chars)")
+            print(f"{'='*80}")
+            print(output[:2000])  # First 2000 chars
+            print(f"\n{'='*80}")
+            print(f"📋 END OF RESPONSE")
+            print(f"{'='*80}\n")
+            
+            # Use intelligent code extractor micro-agent
+            from .code_extractor import extract_code_from_response
+            from ..tools.file_operations import WriteFileTool
+            
+            try:
+                # Extract code using AI-powered agent
+                extraction_result = await extract_code_from_response(output, file_path)
                 
-                # Log the FULL OUTPUT from the model
-                print(f"\n{'='*80}")
-                print(f"📋 FULL MODEL RESPONSE (length: {len(output)} chars)")
-                print(f"{'='*80}")
-                print(output[:2000])  # First 2000 chars
-                print(f"\n{'='*80}")
-                print(f"📋 END OF MODEL RESPONSE")
-                print(f"{'='*80}\n")
+                logger.info(f"📊 Code extractor found {extraction_result.num_files} file(s)")
                 
-                # Use intelligent code extractor micro-agent
-                from .code_extractor import extract_code_from_response
-                from ..tools.file_operations import WriteFileTool
+                # Create each extracted file
+                write_tool = WriteFileTool()
+                created_files = []
                 
-                try:
-                    # Extract code using AI-powered agent
-                    extraction_result = await extract_code_from_response(output, file_path)
+                for extracted_file in extraction_result.files:
+                    try:
+                        await write_tool.execute(
+                            extracted_file.file_path,
+                            extracted_file.content
+                        )
+                        created_files.append(extracted_file.file_path)
+                        logger.info(
+                            f"✅ Created {extracted_file.file_path} "
+                            f"({len(extracted_file.content)} bytes, {extracted_file.file_type})"
+                        )
+                    except Exception as e:
+                        logger.error(f"❌ Failed to write {extracted_file.file_path}: {e}")
+                
+                
+                if created_files:
+                    # NEW: Quality validation and auto-refactoring
+                    logger.info(f"📊 Validating quality of {len(created_files)} generated file(s)...")
                     
-                    logger.info(f"📊 Code extractor found {extraction_result.num_files} file(s)")
+                    print(f"\n{'='*80}")
+                    print(f"🔍 QUALITY VALIDATION")
+                    print(f"{'='*80}")
                     
-                    # Create each extracted file
-                    write_tool = WriteFileTool()
-                    created_files = []
+                    from ..utils.code_quality import validate_file_quality
+                    from .refactoring_agent import refactor_file
                     
-                    for extracted_file in extraction_result.files:
-                        try:
-                            await write_tool.execute(
-                                extracted_file.file_path,
-                                extracted_file.content
-                            )
-                            created_files.append(extracted_file.file_path)
-                            logger.info(
-                                f"✅ Created {extracted_file.file_path} "
-                                f"({len(extracted_file.content)} bytes, {extracted_file.file_type})"
-                            )
-                        except Exception as e:
-                            logger.error(f"❌ Failed to write {extracted_file.file_path}: {e}")
+                    files_needing_refactor = []
+                    validation_results = {}
                     
-                    if created_files:
-                        files_summary = ", ".join(created_files)
-                        return f"Created {len(created_files)} file(s): {files_summary}"
-                    else:
-                        return f"Failed to create any files from extraction"
+                    for file_path in created_files:
+                        print(f"\n📋 Validating: {file_path}")
+                        quality_report = await validate_file_quality(file_path)
+                        validation_results[file_path] = quality_report
                         
-                except Exception as e:
-                    logger.error(f"❌ Code extraction failed: {e}")
-                    return f"Code extraction failed: {str(e)}"
+                        if quality_report.has_critical_issues:
+                            critical_issues = [i for i in quality_report.issues if i.severity == "critical"]
+                            print(f"⚠️  Found {len(critical_issues)} critical issue(s):")
+                            for issue in critical_issues:
+                                print(f"   - {issue.description}")
+                            files_needing_refactor.append(file_path)
+                        elif quality_report.has_issues:
+                            print(f"ℹ️  Has {len(quality_report.issues)} minor issue(s), skipping refactor")
+                        else:
+                            print(f"✅ No issues found")
+                    
+                    # Apply refactoring to fix critical issues
+                    refactored_files = []
+                    if files_needing_refactor:
+                        print(f"\n{'='*80}")
+                        print(f"🔧 AUTO-REFACTORING {len(files_needing_refactor)} FILE(S)")
+                        print(f"{'='*80}\n")
+                        
+                        for file_path in files_needing_refactor:
+                            print(f"🔧 Refactoring: {file_path}")
+                            try:
+                                refactor_result = await refactor_file(
+                                    file_path,
+                                    focus="Fix syntax errors, complete incomplete code, resolve undefined variables, and fix structural issues"
+                                )
+                                
+                                if refactor_result.success:
+                                    refactored_files.append(file_path)
+                                    print(f"✅ Successfully refactored {file_path}")
+                                    logger.info(f"✅ Refactored {file_path}")
+                                else:
+                                    print(f"❌ Refactoring failed for {file_path}")
+                                    logger.error(f"❌ Refactoring failed for {file_path}")
+                                    
+                            except Exception as e:
+                                print(f"❌ Refactoring error: {e}")
+                                logger.error(f"❌ Refactoring error for {file_path}: {e}")
+                        
+                        print(f"\n{'='*80}")
+                        print(f"📊 REFACTORING COMPLETE")
+                        print(f"{'='*80}\n")
+                    
+                    # Return summary
+                    files_summary = ", ".join(created_files)
+                    if refactored_files:
+                        return (
+                            f"Created {len(created_files)} file(s): {files_summary}. "
+                            f"Auto-refactored {len(refactored_files)} file(s) to fix quality issues."
+                        )
+                    else:
+                        result_msg = f"Created {len(created_files)} file(s): {files_summary}"
+                    
+                    print(f"\n{'='*80}")
+                    print(f"↩️  CODE_GENERATOR → COORDINATOR")
+                    print(f"{'='*80}")
+                    print(f"Result: {result_msg}")
+                    print(f"{'='*80}\n")
+                    logger.info(f"↩️  CODE_GENERATOR returning to COORDINATOR: {result_msg}")
+                    return result_msg
+                else:
+                    error_msg = f"Failed to create any files from extraction"
+                    print(f"\n{'='*80}")
+                    print(f"❌ CODE_GENERATOR → COORDINATOR (ERROR)")
+                    print(f"{'='*80}")
+                    print(f"Error: {error_msg}")
+                    print(f"{'='*80}\n")
+                    logger.error(f"❌ CODE_GENERATOR error: {error_msg}")
+                    return error_msg
+                    
+            except Exception as e:
+                logger.error(f"❌ Code extraction failed: {e}")
+                print(f"\n{'='*80}")
+                print(f"❌ CODE_GENERATOR → COORDINATOR (EXCEPTION)")
+                print(f"{'='*80}")
+                print(f"Exception: {str(e)}")
+                print(f"{'='*80}\n")
+                return f"Code extraction failed: {str(e)}"
 
                     
         except Exception as e:
             logger.error(f"Code generation failed: {e}")
+            print(f"\n{'='*80}")
+            print(f"❌ CODE_GENERATOR → COORDINATOR (FAILED)")
+            print(f"{'='*80}")
+            print(f"Error: {str(e)}")
+            print(f"{'='*80}\n")
             return f"Generation failed: {str(e)}"
     
     @agent.tool
@@ -260,7 +342,15 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
         Returns:
             Analysis results
         """
-        logger.info(f"Delegating to codebase investigator: {request}")
+        print(f"\n{'='*80}")
+        print(f"🎯 COORDINATOR → CODEBASE_INVESTIGATOR")
+        print(f"{'='*80}")
+        print(f"Task: Analyze codebase")
+        print(f"Request: {request}")
+        if focus:
+            print(f"Focus: {focus}")
+        print(f"{'='*80}\n")
+        logger.info(f"🎯 COORDINATOR delegating to CODEBASE_INVESTIGATOR: {request}")
         
         codebase_agent = get_codebase_agent()
         
@@ -269,12 +359,27 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
             prompt += f"\nFocus on: {focus}"
         
         try:
+            print(f"🔄 CODEBASE_INVESTIGATOR agent started...")
             result = await codebase_agent.run(prompt)
             # Handle text-only response
             output = result.output if hasattr(result, 'output') else str(result.data)
-            return f"Code Analysis:\n{output}"
+            print(f"✅ CODEBASE_INVESTIGATOR agent finished")
+            
+            result_msg = f"Code Analysis:\n{output}"
+            print(f"\n{'='*80}")
+            print(f"↩️  CODEBASE_INVESTIGATOR → COORDINATOR")
+            print(f"{'='*80}")
+            print(f"Analysis complete (length: {len(output)} chars)")
+            print(f"{'='*80}\n")
+            logger.info(f"↩️  CODEBASE_INVESTIGATOR returning to COORDINATOR")
+            return result_msg
         except Exception as e:
             logger.error(f"Codebase analysis failed: {e}")
+            print(f"\n{'='*80}")
+            print(f"❌ CODEBASE_INVESTIGATOR → COORDINATOR (FAILED)")
+            print(f"{'='*80}")
+            print(f"Error: {str(e)}")
+            print(f"{'='*80}\n")
             return f"Analysis failed: {str(e)}"
     
     @agent.tool
@@ -302,10 +407,21 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
         Returns:
             Edit results
         """
+        print(f"\n{'='*80}")
+        print(f"🎯 COORDINATOR → FILE_EDITOR")
+        print(f"{'='*80}")
+        print(f"Task: Edit files")
+        print(f"Instructions: {instructions}")
+        if file_context:
+            print(f"Context: {file_context}")
         if content:
-            logger.info(f"Delegating to file editor with pre-generated content ({len(content)} chars): {instructions}")
+            print(f"Pre-generated content: {len(content)} chars")
+        print(f"{'='*80}\n")
+        
+        if content:
+            logger.info(f"🎯 COORDINATOR delegating to FILE_EDITOR with pre-generated content ({len(content)} chars): {instructions}")
         else:
-            logger.info(f"Delegating to file editor: {instructions}")
+            logger.info(f"🎯 COORDINATOR delegating to FILE_EDITOR: {instructions}")
         
         file_editor_agent = get_file_editor_agent()
         
@@ -318,15 +434,30 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
         try:
             # Force tool usage with tool_choice=required
             from pydantic_ai import ModelSettings
+            print(f"🔄 FILE_EDITOR agent started...")
             result = await file_editor_agent.run(
                 prompt,
                 model_settings=ModelSettings(tool_choice='required')
             )
             # Handle text-only response
             output = result.output if hasattr(result, 'output') else str(result.data)
-            return f"File editor result:\n{output}"
+            print(f"✅ FILE_EDITOR agent finished")
+            
+            result_msg = f"File editor result:\n{output}"
+            print(f"\n{'='*80}")
+            print(f"↩️  FILE_EDITOR → COORDINATOR")
+            print(f"{'='*80}")
+            print(f"Edit complete")
+            print(f"{'='*80}\n")
+            logger.info(f"↩️  FILE_EDITOR returning to COORDINATOR")
+            return result_msg
         except Exception as e:
             logger.error(f"File editing failed: {e}")
+            print(f"\n{'='*80}")
+            print(f"❌ FILE_EDITOR → COORDINATOR (FAILED)")
+            print(f"{'='*80}")
+            print(f"Error: {str(e)}")
+            print(f"{'='*80}\n")
             return f"Edit failed: {str(e)}"
     
     @agent.tool
@@ -351,7 +482,14 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
         Returns:
             Search results
         """
-        logger.info(f"Searching code for: {query}")
+        print(f"\n{'='*80}")
+        print(f"🎯 COORDINATOR → CODEBASE_INVESTIGATOR (search)")
+        print(f"{'='*80}")
+        print(f"Task: Search code")
+        print(f"Query: {query}")
+        print(f"Pattern: {file_pattern}")
+        print(f"{'='*80}\n")
+        logger.info(f"🎯 COORDINATOR delegating search to CODEBASE_INVESTIGATOR: {query}")
         
         # Use codebase agent's search capabilities
         codebase_agent = get_codebase_agent()
@@ -359,12 +497,27 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
         prompt = f"Search for: {query} in files matching {file_pattern}"
         
         try:
+            print(f"🔄 CODEBASE_INVESTIGATOR (search) agent started...")
             result = await codebase_agent.run(prompt)
             # Handle text-only response
             output = result.output if hasattr(result, 'output') else str(result.data)
-            return f"Search results:\n{output}"
+            print(f"✅ CODEBASE_INVESTIGATOR (search) agent finished")
+            
+            result_msg = f"Search results:\n{output}"
+            print(f"\n{'='*80}")
+            print(f"↩️  CODEBASE_INVESTIGATOR (search) → COORDINATOR")
+            print(f"{'='*80}")
+            print(f"Search complete")
+            print(f"{'='*80}\n")
+            logger.info(f"↩️  CODEBASE_INVESTIGATOR (search) returning to COORDINATOR")
+            return result_msg
         except Exception as e:
             logger.error(f"Code search failed: {e}")
+            print(f"\n{'='*80}")
+            print(f"❌ CODEBASE_INVESTIGATOR (search) → COORDINATOR (FAILED)")
+            print(f"{'='*80}")
+            print(f"Error: {str(e)}")
+            print(f"{'='*80}\n")
             return f"Search failed: {str(e)}"
     
     return agent
@@ -390,18 +543,19 @@ async def delegate_task(user_request: str) -> DelegationResult:
         >>> print(result.task_summary)
         "Analyzed configuration, then updated default_temperature to 0.5"
     """
-    print(f"🔵 ENTERED delegate_task")
-    logger.info(f"🎯 COORDINATOR invoked with request: {user_request[:100]}...")
+    print(f"\n{'#'*80}")
+    print(f"🚀 USER → COORDINATOR")
+    print(f"{'#'*80}")
+    print(f"Request: {user_request}")
+    print(f"{'#'*80}\n")
+    logger.info(f"🚀 USER request received by COORDINATOR: {user_request[:100]}...")
     
-    print(f"🔵 Getting coordinator agent...")
     coordinator = get_coordinator_agent()
-    print(f"✅ Got coordinator agent")
+    logger.info(f"COORDINATOR agent initialized")
     
-    logger.info(f"Delegating task: {user_request}")
-    
-    print(f"🔵 Running coordinator with request...")
+    print(f"🔄 COORDINATOR agent analyzing request and routing to sub-agents...\n")
     result = await coordinator.run(user_request)
-    print(f"✅ Coordinator returned")
+    print(f"\n✅ COORDINATOR agent finished processing\n")
     
     # Parse text output into DelegationResult
     output = result.output if hasattr(result, 'output') else str(result.data)
@@ -420,9 +574,20 @@ async def delegate_task(user_request: str) -> DelegationResult:
     if "edit_files" in output or "editor" in output.lower():
         agents_used.append("file_editor")
     
-    return DelegationResult(
+    delegation_result = DelegationResult(
         success=success,
         result=output,
         agents_used=agents_used,
         task_summary=output[:200] + "..." if len(output) > 200 else output
     )
+    
+    print(f"\n{'#'*80}")
+    print(f"✅ COORDINATOR → USER (FINAL RESULT)")
+    print(f"{'#'*80}")
+    print(f"Success: {success}")
+    print(f"Agents used: {', '.join(agents_used) if agents_used else 'None detected'}")
+    print(f"Result preview: {output[:200]}..." if len(output) > 200 else f"Result: {output}")
+    print(f"{'#'*80}\n")
+    logger.info(f"✅ COORDINATOR returning final result to USER (success={success})")
+    
+    return delegation_result

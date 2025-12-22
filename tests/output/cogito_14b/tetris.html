@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Modern Tetris</title>
+  <style>
+body {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+#gameContainer {
+  background-color: #2d3436;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+  font-family: 'Courier New', monospace;
+}
+
+#board {
+  position: relative;
+  width: 400px;
+  height: 800px;
+}
+
+.block {
+  position: absolute;
+  background-color: #eb5757;
+  border-radius: 5px;
+  display: block;
+}
+
+.menu {
+  position: absolute;
+  bottom: -150px;
+  left: -400px;
+  width: 85%;
+  height: auto;
+  margin-left: 20px;
+  padding-top: 30px;
+  text-align: center;
+  background-color: rgba(0,0,0,.7);
+}
+
+.menu h1 {
+  color: white;
+  font-size: 4rem;
+  padding-bottom: 15%;
+}
+</style>
+</head>
+<body onLoad="game.initialize();">
+<div id="gameContainer">
+ <div id="board"></div>
+ <div class="menu">
+   <h1>Tetris<br></h1>
+   <button onclick="startGame()" style="font-size:1.2rem">Start Game</button>&nbsp;&nbsp;
+   <span id="score" style="color:white;font-size:.83rem;display:inline-block;">Score:<br>0</span>
+   <div id="pause" class="menu-text"></div>
+ </div>
+<body onLoad="initializeKeyboardControls()">
+<script>
+const ROWS = 20;
+const COLS = 10;
+let gameBoard = [];
+let currentPiece = null;
+let gameOver = false;
+let score = 0;
+let pieceBag = [];
+
+const COLORS = {
+  I: '#4ecdc4',
+  O: '#ff8f7b',
+  T: '#c9df56',
+  S: '#8ac2e3',
+  Z: '#fa5fba',
+  J: '#16a0ab',
+  L: '#ecdd0e'
+};
+
+const SHAPES = {
+  I: [[0,0,0,0],
+      [1,1,1,1],
+      [0,0,0,0],
+      [0,0,0,0]],
+  O: [[2,2],
+      [2,2]],
+  T: [[4,4,4],
+      [4,0,0],
+      [0,0,0]],
+  S: [[3,0,3],
+      [0,3,3]],
+  Z: [[-1,8,-1],
+      [-1,8,-1]],
+  J: [[6,0,0],
+      [6,6,6]],
+  L: [[7,7,7]]};
+  
+class Piece {
+  constructor(type) {
+    this.type = type;
+    const shape = SHAPES[this.type];
+    this.blocks = [];
+    let rotationIndex = 0
+    for (let i=0; i < 4; i++) {
+      for (let k=0; k < 4; k++) {
+         if(shape[i][k] != 0) {
+          const block = shape[k][i]
+          this.blocks.push(block)
+        }
+      }
+    }        
+    this.x = 3;
+    this.y = ROWS -16;
+    
+}
+
+class TetrisGame {
+  constructor() {  
+    gameBoard=[]
+    for (let y=0; y<ROWS; y++) 
+      gameBoard[y] = []
+      
+    currentPiece = null
+    gameOver=false 
+    score=0
+   
+    const canvas = document.getElementById('board');
+    this.ctx = canvas.getContext('2d');  
+  }
+  
+  startGame() {
+    gameOver=false;
+    initializeKeyboardControls();
+    requestAnimationFrame(() => {tick()})
+  } 
+  
+nextLevel() {}
+endGame() {}
+
+pauseGame(){ game.gameBoard=[]; currentPiece=null}
+
+update() {
+}
+ 
+draw() {
+}
+}
+  
+let scoreElm = document.getElementById('score');
+function updateScore(points) {
+  score += points;
+  scoreElm.innerHTML=`Score:<br>${score}`;
+}
+  
+function checkCollision(piece, directionX=0, directionY=0) { return false; }
+      
+function tick(now) {
+ if(gameOver) return
+ currentPiece = createNewPiece()
+  if(checkCollision(currentPiece)) endGame();
+  
+ update()
+ draw()
+ requestAnimationFrame( ()=>{tick()} )
+}
+
+let keyboardState = {};
+addEventListener('keydown', e => { 
+keyboardState[e.key]=true ;
+if(e.key==='Escape') pauseGame()})
+addEventListener('keyup', e => {
+  delete keyboardState[e.key];
+})
+  
+function handleMove(key, directionX=0, directionY=0) {
+
+}
+  
+let game=new TetrisGame();
+
+</script>
+</body>

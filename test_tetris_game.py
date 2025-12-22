@@ -2,12 +2,30 @@
 
 import asyncio
 import sys
+import re
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from packages.core.agents.delegation import delegate_task
-from packages.core.config import init_config
+from packages.core.config import init_config, get_config
+
+
+def get_model_folder_name() -> str:
+    """Get sanitized model name for folder naming.
+    
+    Returns:
+        Sanitized model name suitable for folder name
+    """
+    config = get_config()
+    # Get the code generator model (used for code generation)
+    model_name = config.get_agent_model("code_generator")
+    
+    # Sanitize: remove 'ollama:' prefix, replace special chars with underscores
+    sanitized = re.sub(r'^(ollama|openai|google-gla):', '', model_name)
+    sanitized = re.sub(r'[:/\\\s.<>"|?*]', '_', sanitized)
+    
+    return sanitized
 
 async def test_tetris():
     print('='*80)
@@ -18,8 +36,14 @@ async def test_tetris():
     init_config()
     print('✅ Config loaded')
     
+    # Get model-specific output folder
+    model_folder = get_model_folder_name()
+    output_dir = Path(f'tests/output/{model_folder}')
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print(f'📁 Output directory: {output_dir}')
+    
     print('\n📋 Step 2: Preparing command...')
-    command = """create tests/output/tetris.html - a complete working Tetris game. 
+    command = f"""create {output_dir}/tetris.html - a complete working Tetris game. 
     Requirements:
     - Classic Tetris gameplay with all 7 tetromino shapes (I, O, T, S, Z, J, L)
     - 10x20 game board grid
@@ -45,7 +69,7 @@ async def test_tetris():
     print(f'Result: {result.result[:200]}...')
     
     # Check if file was created
-    tetris_file = Path('tests/output/tetris.html')
+    tetris_file = output_dir / 'tetris.html'
     if tetris_file.exists():
         size = tetris_file.stat().st_size
         content = tetris_file.read_text()

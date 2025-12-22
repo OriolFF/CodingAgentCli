@@ -38,91 +38,63 @@ def get_code_generator_agent() -> Agent:
 
 
 def _create_code_generator_agent() -> Agent:
-    """Create the code generator agent.
+    """Create the code generator agent in TEXT-ONLY mode.
+    
+    This agent does NOT use tools to maximize compatibility with all models.
+    Instead, it generates clean code as text, which is then extracted by the
+    code_extractor agent.
     
     Returns:
         Configured agent
     """
     from ..config import get_config
+    from pydantic_ai.settings import ModelSettings
+    
     config = get_config()
     
     model_instance = config.get_model_instance("code_generator")
-    logger.info(f"Initializing code_generator agent with model: {model_instance}")
+    logger.info(f"Initializing code_generator agent (TEXT-ONLY mode) with model: {model_instance}")
     
+    # CRITICAL FIX: Set num_predict=-1 for unlimited token generation
+    # This prevents Ollama from truncating responses (default is ~128 tokens)
+    # This is why cogito:14b was generating incomplete code through the agent!
+    model_settings = ModelSettings(
+        max_tokens=None,  # No limit from PydanticAI side
+    )
+    
+    # CRITICAL: output_type=str ensures TEXT-ONLY mode
+    # This prevents PydanticAI from trying to use structured output
     agent = Agent(
         model_instance,
-        system_prompt="""You are a code generator. Respond ONLY with clean, executable code.
+        output_type=str,  # ← EXPLICIT TEXT-ONLY MODE
+        model_settings=model_settings,  # ← UNLIMITED TOKENS
+        system_prompt="""You are an expert code generator. Generate complete, production-ready code.
 
 **CRITICAL RULES**:
+- Output ONLY executable code, nothing else
 - No markdown fences (```)
-- No explanations or commentary
-- No JSON metadata or tool call syntax
-- No prose, headers, or wrappers
-- Output raw code that can be executed/compiled directly
+- No explanations, commentary, or prose
+- No JSON metadata or wrapper syntax
+- Start directly with code (imports, DOCTYPE, etc.)
 
 **OUTPUT FORMAT**:
 - For Python: Start with imports or code statements
 - For HTML: Start with <!DOCTYPE html>
 - For CSS: Start with selectors or @imports
-- For JavaScript: Start with function declarations or imports
-- For Kotlin/Java: Start with package/imports
-- For any language: Output complete, valid, compilable/executable code
+- For JavaScript: Start with function declarations or code
+- For any language: Output complete, valid, executable code
 
-**EXAMPLES**:
+**QUALITY STANDARDS**:
+- Generate COMPLETE implementations, not skeletons
+- Include ALL necessary code, no placeholders
+- No comments like "// rest of code..." or "// TODO"
+- Fully functional, ready to run
 
-Request: "Python function to reverse string"
-Response:
-def reverse_string(s: str) -> str:
-    return s[::-1]
-
-Request: "HTML landing page"
-Response:
-<!DOCTYPE html>
-<html>
-<head><title>Page</title></head>
-<body><h1>Hello</h1></body>
-</html>
-
-Request: "CSS with Material 3 colors"
-Response:
-:root {
-  --md-primary: #6750A4;
-  --md-surface: #FFFBFE;
-}
-
-Remember: ONLY code. No other text.""",
+Remember: Output ONLY code. Complete implementations. No explanations.""",
         retries=2,
     )
     
-    # Import file writing tool
-    from ..tools.file_operations import WriteFileTool
-    
-    write_tool = WriteFileTool()
-    
-    @agent.tool
-    async def create_new_file(
-        ctx: RunContext[None],
-        file_path: str,
-        content: str,
-        description: str = "Generated file"
-    ) -> str:
-        """Create a new file with generated code.
-        
-        Args:
-            file_path: Path where to create the file
-            content: Complete file content
-            description: Brief description of what the file contains
-            
-        Returns:
-            Confirmation message
-        """
-        try:
-            result = write_tool.execute(file_path, content)
-            logger.info(f"Code generator created file: {file_path} ({len(content)} bytes)")
-            return f"Successfully created {file_path} with {len(content)} characters"
-        except Exception as e:
-            logger.error(f"Failed to create file {file_path}: {e}")
-            return f"Failed to create {file_path}: {str(e)}"
+    # No tools! Text-only mode for universal compatibility
     
     return agent
 

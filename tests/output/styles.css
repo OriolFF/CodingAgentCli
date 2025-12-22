@@ -1,0 +1,8 @@
+:root {
+    --md-primary: #6750A4;
+    --md-secondary: #ab47bc;
+    --md-tertiary: #dc392a;
+}
+
+body {...} 
+.container { ... } ...

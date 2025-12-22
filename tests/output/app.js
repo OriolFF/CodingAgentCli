@@ -1,0 +1,3 @@
+const sections = document.querySelectorAll('section');
+let scrollTriggerTop = window.innerHeight / 2;
+...
