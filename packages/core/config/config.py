@@ -1,9 +1,16 @@
 """Configuration system using Pydantic Settings."""
 
 import os
+from pathlib import Path
 from typing import Optional, Union
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+# Resolve the project root relative to this file
+# packages/core/config/config.py -> project_root
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+ENV_PATH = PROJECT_ROOT / ".env"
 
 
 class ProviderConfig(BaseModel):
@@ -50,7 +57,7 @@ class Config(BaseSettings):
     """Main configuration class."""
     
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=ENV_PATH,
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
