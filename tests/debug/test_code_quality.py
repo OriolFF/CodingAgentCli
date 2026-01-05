@@ -4,7 +4,7 @@ import asyncio
 from pathlib import Path
 import sys
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from packages.core.utils.code_quality import validate_file_quality
 

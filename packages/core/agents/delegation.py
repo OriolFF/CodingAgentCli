@@ -167,8 +167,19 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
         prompt = f"Create {file_path} with {language} code: {description}"
         
         try:
+            # CRITICAL FIX: Pass model_settings at runtime to enable unlimited token generation
+            # This fixes cogito:14b and other Ollama models that were truncating responses
+            from pydantic_ai.settings import ModelSettings
+            
+            model_settings = ModelSettings(
+                max_tokens=None,  # Disable PydanticAI token limit (lets Ollama use its own config)
+            )
+            
             print(f"🔄 CODE_GENERATOR agent started...")
-            result = await code_gen_agent.run(prompt)
+            result = await code_gen_agent.run(
+                prompt,
+                model_settings=model_settings  # ← Pass unlimited tokens
+            )
             output = result.output if hasattr(result, 'output') else str(result.data)
             print(f"✅ CODE_GENERATOR agent finished (response length: {len(output)} chars)")
             
@@ -214,75 +225,24 @@ NOT: "RESULT: {...} AGENTS_USED: search_code"
                 
                 
                 if created_files:
-                    # NEW: Quality validation and auto-refactoring
-                    logger.info(f"📊 Validating quality of {len(created_files)} generated file(s)...")
+                    # TODO: Fix auto-refactoring system (currently disabled)
+                    # See: docs/AUTO_REFACTORING_BROKEN_ANALYSIS.md
+                    # Issue: refactor_file() doesn't actually modify files, just returns descriptions
+                    # This causes code to be replaced with placeholders like "..." and "// rest of code"
+                    # 
+                    # To re-enable:
+                    # 1. Fix refactor_file() to actually read, refactor, and write files
+                    # 2. Add validation to prevent placeholder generation
+                    # 3. Test thoroughly before uncommenting
+                    #
+                    # DISABLED CODE BELOW (lines 227-296 in original):
+                    # - Quality validation
+                    # - Auto-refactoring
+                    # - Refactoring results
                     
-                    print(f"\n{'='*80}")
-                    print(f"🔍 QUALITY VALIDATION")
-                    print(f"{'='*80}")
-                    
-                    from ..utils.code_quality import validate_file_quality
-                    from .refactoring_agent import refactor_file
-                    
-                    files_needing_refactor = []
-                    validation_results = {}
-                    
-                    for file_path in created_files:
-                        print(f"\n📋 Validating: {file_path}")
-                        quality_report = await validate_file_quality(file_path)
-                        validation_results[file_path] = quality_report
-                        
-                        if quality_report.has_critical_issues:
-                            critical_issues = [i for i in quality_report.issues if i.severity == "critical"]
-                            print(f"⚠️  Found {len(critical_issues)} critical issue(s):")
-                            for issue in critical_issues:
-                                print(f"   - {issue.description}")
-                            files_needing_refactor.append(file_path)
-                        elif quality_report.has_issues:
-                            print(f"ℹ️  Has {len(quality_report.issues)} minor issue(s), skipping refactor")
-                        else:
-                            print(f"✅ No issues found")
-                    
-                    # Apply refactoring to fix critical issues
-                    refactored_files = []
-                    if files_needing_refactor:
-                        print(f"\n{'='*80}")
-                        print(f"🔧 AUTO-REFACTORING {len(files_needing_refactor)} FILE(S)")
-                        print(f"{'='*80}\n")
-                        
-                        for file_path in files_needing_refactor:
-                            print(f"🔧 Refactoring: {file_path}")
-                            try:
-                                refactor_result = await refactor_file(
-                                    file_path,
-                                    focus="Fix syntax errors, complete incomplete code, resolve undefined variables, and fix structural issues"
-                                )
-                                
-                                if refactor_result.success:
-                                    refactored_files.append(file_path)
-                                    print(f"✅ Successfully refactored {file_path}")
-                                    logger.info(f"✅ Refactored {file_path}")
-                                else:
-                                    print(f"❌ Refactoring failed for {file_path}")
-                                    logger.error(f"❌ Refactoring failed for {file_path}")
-                                    
-                            except Exception as e:
-                                print(f"❌ Refactoring error: {e}")
-                                logger.error(f"❌ Refactoring error for {file_path}: {e}")
-                        
-                        print(f"\n{'='*80}")
-                        print(f"📊 REFACTORING COMPLETE")
-                        print(f"{'='*80}\n")
-                    
-                    # Return summary
+                    # Return summary without refactoring
                     files_summary = ", ".join(created_files)
-                    if refactored_files:
-                        return (
-                            f"Created {len(created_files)} file(s): {files_summary}. "
-                            f"Auto-refactored {len(refactored_files)} file(s) to fix quality issues."
-                        )
-                    else:
-                        result_msg = f"Created {len(created_files)} file(s): {files_summary}"
+                    result_msg = f"Created {len(created_files)} file(s): {files_summary}"
                     
                     print(f"\n{'='*80}")
                     print(f"↩️  CODE_GENERATOR → COORDINATOR")

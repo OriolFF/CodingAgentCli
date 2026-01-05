@@ -5,7 +5,7 @@ import sys
 import re
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from packages.core.config.config import init_config, get_config
 from packages.core.agents.delegation import delegate_task

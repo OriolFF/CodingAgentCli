@@ -1,0 +1,4 @@
+class Calculator:
+    def __init__(self):
+        pass\n
+    @staticmethod\n    def add(x, y):\n        return x + y\n\n    @staticmethod  \ndef subtract(x, y):\n        return x - y\n\n    @staticmethod\n    def multiply(x, y):\n        return x * y\n\n    @staticmethod\n    def divide(x, y):\n        if y == 0:\n            raise ValueError("Cannot divide by zero")\n        return x / y\\n\\nif __name__ == "__main__":\n    calc = Calculator()\n\n    # Example calculations\n    print(f"Addition: {calc.add(10, 5)}")          # 15.0\n    print(f"Subtraction: {calc.subtract(10, 5)}")   # 5.0\n    print(f"Multiply: {calc.multiply(10, 5)}")      # 50.0\n    try:\n        result = calc.divide(10, 5)\n        print(f"Division: {result}" )                # 2.0\n    except ValueError as e:\n        print(e)\n    try:\n        calc.divide(10, 0)                          # Will raise error\n    except ValueError as e:\n        print(e)

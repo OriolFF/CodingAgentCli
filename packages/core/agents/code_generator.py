@@ -48,26 +48,50 @@ def _create_code_generator_agent() -> Agent:
         Configured agent
     """
     from ..config import get_config
-    from pydantic_ai.settings import ModelSettings
     
     config = get_config()
     
-    model_instance = config.get_model_instance("code_generator")
-    logger.info(f"Initializing code_generator agent (TEXT-ONLY mode) with model: {model_instance}")
+    model_string = config.get_model_instance("code_generator")
+    logger.info(f"Initializing code_generator agent (TEXT-ONLY mode) with model: {model_string}")
     
-    # CRITICAL FIX: Set num_predict=-1 for unlimited token generation
-    # This prevents Ollama from truncating responses (default is ~128 tokens)
-    # This is why cogito:14b was generating incomplete code through the agent!
-    model_settings = ModelSettings(
-        max_tokens=None,  # No limit from PydanticAI side
-    )
+    # CRITICAL FIX: For Ollama models, use pydanticai-ollama package to pass options
+    # This allows us to set num_predict=-1 for unlimited token generation
+    if model_string.startswith("ollama:"):
+        from pydanticai_ollama.models.ollama import OllamaModel, OllamaModelSettings
+        from ..config.model_configuration import get_model_config
+        
+        model_name = model_string.split(":", 1)[1]
+        
+        # Get model-specific configuration from centralized config
+        model_config = get_model_config(model_name)
+        
+        logger.info(f"📋 Model config for {model_name}:")
+        logger.info(f"   - Context: {model_config.num_ctx:,} tokens")
+        logger.info(f"   - Temperature: {model_config.temperature}")
+        logger.info(f"   - Note: {model_config.description}")
+        
+        # Apply model-specific settings
+        settings = OllamaModelSettings(
+            num_predict=model_config.num_predict,
+            num_ctx=model_config.num_ctx,
+            temperature=model_config.temperature,
+        )
+        
+        model_instance = OllamaModel(
+            model_name=model_name,
+            settings=settings,
+        )
+        logger.info(f"✅ Using OllamaModel with settings from model_configuration.py")
+    else:
+        # For non-Ollama models, use string identifier
+        model_instance = model_string
+        logger.info(f"Using model: {model_instance}")
     
     # CRITICAL: output_type=str ensures TEXT-ONLY mode
     # This prevents PydanticAI from trying to use structured output
     agent = Agent(
         model_instance,
         output_type=str,  # ← EXPLICIT TEXT-ONLY MODE
-        model_settings=model_settings,  # ← UNLIMITED TOKENS
         system_prompt="""You are an expert code generator. Generate complete, production-ready code.
 
 **CRITICAL RULES**:

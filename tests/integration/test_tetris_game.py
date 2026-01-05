@@ -5,7 +5,7 @@ import sys
 import re
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from packages.core.agents.delegation import delegate_task
 from packages.core.config import init_config, get_config
@@ -43,22 +43,26 @@ async def test_tetris():
     print(f'📁 Output directory: {output_dir}')
     
     print('\n📋 Step 2: Preparing command...')
-    command = f"""create {output_dir}/tetris.html - a complete working Tetris game. 
-    Requirements:
-    - Classic Tetris gameplay with all 7 tetromino shapes (I, O, T, S, Z, J, L)
-    - 10x20 game board grid
-    - Keyboard controls: Arrow keys for move left/right/down, Up arrow or Space for rotate
-    - Score tracking and level progression
-    - Next piece preview
-    - Game over detection and restart functionality
-    - Line clearing animation
-    - Increasing speed as level increases
-    - Modern, clean UI with nice colors
-    - Pause functionality (P key)
-    - Mobile-friendly touch controls
-    
-    You can organize the code however you prefer (single file or multiple files like HTML + CSS + JS).
-    Generate complete, working implementations - no placeholder comments or incomplete code."""
+    command = f"""Create a complete working Tetris game in {output_dir}/.
+
+STRUCTURE: Use THREE separate files (HTML, CSS, JavaScript) with proper linking.
+
+REQUIREMENTS:
+- Classic Tetris gameplay with all 7 tetromino shapes (I, O, T, S, Z, J, L)
+- 10x20 game board grid
+- Keyboard controls: Arrow keys for move left/right/down, Up arrow or Space for rotate
+- Score tracking and level progression
+- Next piece preview
+- Game over detection and restart functionality
+- Line clearing animation
+- Increasing speed as level increases
+- Modern, clean UI with nice colors
+- Pause functionality (P key)
+- Mobile-friendly touch controls
+
+IMPORTANT: 
+- Generate complete, working code with NO placeholders
+- Split into HTML, CSS, and JS files properly linked together"""
     print('✅ Command prepared')
     
     print('\n📋 Step 3: Delegating task...')

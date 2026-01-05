@@ -114,15 +114,22 @@ async def extract_code_from_response(
     base_dir = str(Path(requested_file_path).parent)
     file_extension = Path(requested_file_path).suffix
     
-    prompt = f"""Extract code from this response.
+    prompt = f"""Extract code files from this response.
 
-Requested file: {requested_file_path}
-Base directory: {base_dir}
+REQUESTED FILE: {requested_file_path}
+BASE DIRECTORY: {base_dir}
 
-Response to extract:
+🚨 CRITICAL: ALL file_path values MUST start with: {base_dir}/
+
+EXAMPLES:
+- Main HTML: {requested_file_path}
+- CSS file: {base_dir}/styles.css
+- JS file: {base_dir}/game.js
+
+RESPONSE TO EXTRACT:
 {response_text}
 
-Return JSON with extracted files."""
+Return JSON with files array. Use {base_dir}/ prefix for EVERY file_path."""
     
     logger.info(f"🔍 Starting intelligent code extraction...")
     try:

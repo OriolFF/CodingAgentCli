@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Landing Page</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@300;400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --md-sys-primary-100: #e6f7ff;
+            --md-sys-primary-500: #2962ff;
+            --md-sys-on-background: #1a1a1a;
+            --md-sys-background: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--md-sys-on-background);
+            background-color: var(--md-sys-background);
+        }
+
+        .hero {
+            height: 100vh;
+            padding: 8rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-size: cover;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(41, 98, 255, 0.3);
+        }
+
+        .hero-content {
+            max-width: 60%;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+            color: var(--md-sys-on-background);
+        }
+
+        .hero-description {
+            font-size: 1.2rem;
+            color: rgba(0, 0, 0, 0.6);
+            margin-bottom: 2rem;
+            max-width: 50%;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background-color: var(--md-sys-primary-500);
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: opacity 0.3s ease;
+        }
+
+        .features {
+            padding: 8rem 2rem;
+            background-color: var(--md-sys-background);
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .testimonials {
+            background-color: #f5f7fa;
+            padding: 8rem 2rem;
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .testimonial-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: rgba(0, 0, 0, 0.05) 0px 6px 12px;
+            transition: transform 0.3s ease;
+        }
+
+        .testimonial-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .contact-form {
+            padding: 8rem 2rem;
+        }
+
+        .form-grid {
+            display: grid;
+            gap: 1rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+            font-size: 1rem;
+        }
+
+        button[type="submit"] {
+            background-color: var(--md-sys-primary-500);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: opacity 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .feature-grid,
+            .testimonial-grid,
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <section class="hero" style="background-image: url('https://source.unsplash.com/random/1920x1080')">
+        <div class="hero-content">
+            <h1 class="hero-title">Welcome to Our Platform</h1>
+            <p class="hero-description">Transform your business with our cutting-edge solutions. Elevate performance, streamline processes and achieve unprecedented results.</p>
+            <a href="#" class="cta-button">Get Started Now</a>
+        </div>
+    </section>
+
+    <section class="features">
+        <h2>Our Features</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <i class="material-icons">speed</i>
+                <h3>Fast Performance</h3>
+                <p>Optimized for speed and efficiency, our platform ensures lightning-fast performance.</p>
+            </div>
+            <div class="feature-card">
+                <i class="material-icons">security</i>
+                <h3>Secure Platform</h3>
+                <p>State-of-the-art security protocols protect your data at every step.</p>
+            </div>
+            <div class="feature-card">
+                <i class="material-icons">star</i>
+                <h3>Superior Support</h3>
+                <p>24/7 expert support available whenever you need it.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="testimonials">
+        <h2>What Our Clients Say</h2>
+        <div class="testimonial-grid">
+            <div class="testimonial-card">
+                <blockquote>"Outstanding platform with excellent customer service and cutting-edge technology."</blockquote>
+                <cite>- Jane Doe, CEO of XYZ Corp</cite>
+            </div>
+            <div class="testimonial-card">
+                <blockquote>"Transformed our business processes within weeks. Highly recommended!"</blockquote>
+                <cite>- John Smith, Founder of ABC Inc.</cite>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact-form">
+        <h2>Contact Us</h2>
+        <form id="contactForm" action="/submit" method="POST">
+            <div class="form-grid">
+                <input type="text" name="name" placeholder="Your Name" required class="input-field">
+                <input type="email" name="email" placeholder="Your Email" required class="input-field">
+                <textarea name="message" placeholder="Your Message" required class="input-field"></textarea>
+                <button type="submit">Send Message</button>
+            </div>
+        </form>
+    </section>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('contactForm');
+            form.onsubmit = function(e) {
+                e.preventDefault();
+                alert('Thank you for your message! We will get back to you soon.');
+            };
+            
+            // Add scroll animations
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            document.querySelectorAll('.feature-card').forEach(card => observer.observe(card));
+            document.querySelectorAll('.testimonial-card').forEach(card => observer.observe(card));
+        });
+    </script>
+</body>
+</html>
