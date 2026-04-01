@@ -1219,7 +1219,7 @@ requires-dist = [
     { name = "click", specifier = ">=8.1.0" },
     { name = "google-generativeai", specifier = ">=0.3.0" },
     { name = "httpx", specifier = ">=0.25.0" },
-    { name = "litellm", specifier = ">=1.0.0" },
+    { name = "litellm", specifier = "=1.80.9" },
     { name = "mcp", specifier = ">=0.1.0" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0.0" },
     { name = "ollama", specifier = ">=0.1.0" },
